@@ -1,0 +1,786 @@
+CHIP_ID(id=88)
+===== MIRROR BREATH TIMES =====
+Pressure:  963.5145349849513
+Filtered pressure:  963.6396872596562
+Pressure:  1038.5676731617507
+Filtered pressure:  973.7983714701886
+Pressure:  1038.5540513914657
+Filtered pressure:  983.7661712561882
+Pressure:  1038.5593935449467
+Filtered pressure:  993.3658697641788
+Pressure:  1038.5685509785442
+Filtered pressure:  1002.4353177224233
+Pressure:  1038.5765223292353
+Filtered pressure:  1010.8335647896956
+Pressure:  1038.5565593809836
+Filtered pressure:  1018.4455829562324
+Pressure:  1038.5037718010917
+Filtered pressure:  1025.1854142361333
+Pressure:  1038.4422224707748
+Filtered pressure:  1030.9977140286019
+Pressure:  1038.38415985105
+Filtered pressure:  1035.8577701672712
+Pressure:  1038.3050368555246
+Filtered pressure:  1039.7701575362205
+Pressure:  1038.0123328008951
+Filtered pressure:  1042.7662423499653
+Pressure:  1037.5878036620668
+Filtered pressure:  1044.9007821124344
+Pressure:  1037.3221645035396
+Filtered pressure:  1046.2478802664423
+Pressure:  1037.1218993578302
+Filtered pressure:  1046.8965518922616
+Pressure:  1036.9036893961156
+Filtered pressure:  1046.9461416402323
+Pressure:  1036.5632215317723
+Filtered pressure:  1046.5018104310661
+Pressure:  1036.1562590656804
+Filtered pressure:  1045.6702762697137
+Pressure:  1035.861509482308
+Filtered pressure:  1044.5559594653191
+Pressure:  1035.6531869523526
+Filtered pressure:  1043.2576458604726
+Pressure:  1035.5062620700592
+Filtered pressure:  1041.8657451285776
+Pressure:  1035.3986624639108
+Filtered pressure:  1040.460186251801
+Pressure:  1035.3151272091254
+Filtered pressure:  1039.1089601546128
+Pressure:  1035.2765563765863
+Filtered pressure:  1037.8672910840887
+Pressure:  1035.54883370641
+Filtered pressure:  1036.7773943197378
+Pressure:  1035.9979556989467
+Filtered pressure:  1035.8687584784252
+Pressure:  1036.4505229995816
+Filtered pressure:  1035.1588761783576
+Pressure:  1036.8331016841205
+Filtered pressure:  1034.6543371955643
+Pressure:  1037.2073615984712
+Filtered pressure:  1034.3521934737275
+Pressure:  1037.5302678940616
+Filtered pressure:  1034.2415052254944
+Breath time:  2.9
+Pressure:  1037.821752576485
+Filtered pressure:  1034.3049813919679
+Pressure:  1038.0675783527959
+Filtered pressure:  1034.520635168754
+Pressure:  1038.269676816977
+Filtered pressure:  1034.8633853185268
+Pressure:  1038.4258449785846
+Filtered pressure:  1035.3065457280884
+Pressure:  1038.5422064481118
+Filtered pressure:  1035.823158336628
+Pressure:  1038.6546472568734
+Filtered pressure:  1036.3871374354271
+Pressure:  1038.783796698265
+Filtered pressure:  1036.9742057812975
+Pressure:  1038.9262166298647
+Filtered pressure:  1037.562614454522
+Pressure:  1039.0531653319206
+Filtered pressure:  1038.13364854504
+Pressure:  1039.1685646723274
+Filtered pressure:  1038.6719293360459
+Pressure:  1039.2702627760896
+Filtered pressure:  1039.165530569131
+Pressure:  1039.3424676939646
+Filtered pressure:  1039.605931604157
+Pressure:  1039.4188624009187
+Filtered pressure:  1039.9878338660012
+Pressure:  1039.5148185200098
+Filtered pressure:  1040.3088689707256
+Pressure:  1039.5919148179669
+Filtered pressure:  1040.5692274537714
+Pressure:  1039.7159140277129
+Filtered pressure:  1040.771236234668
+Pressure:  1039.8372267135037
+Filtered pressure:  1040.918911044843
+Pressure:  1039.9528982649088
+Filtered pressure:  1041.0175072530408
+Pressure:  1040.067553324577
+Filtered pressure:  1041.0730891017906
+Pressure:  1040.1748482010498
+Filtered pressure:  1041.0921335708954
+Pressure:  1040.2782211063684
+Filtered pressure:  1041.0811811372007
+Pressure:  1040.388737761866
+Filtered pressure:  1041.0465417931598
+Pressure:  1040.4739504659772
+Filtered pressure:  1040.994060973364
+Pressure:  1040.578294437294
+Filtered pressure:  1040.9289466437572
+Pressure:  1040.6661966514962
+Filtered pressure:  1040.855655833908
+Pressure:  1040.700582353517
+Filtered pressure:  1040.777836415495
+Pressure:  1040.7150867254459
+Filtered pressure:  1040.698317999911
+Pressure:  1040.7455492573936
+Filtered pressure:  1040.6191444586382
+Pressure:  1040.7787003500055
+Filtered pressure:  1040.5416397340546
+Pressure:  1040.8113668598585
+Filtered pressure:  1040.4664982518987
+Pressure:  1040.8066936376115
+Filtered pressure:  1040.3938913226432
+Pressure:  1040.761242056228
+Filtered pressure:  1040.3235814019888
+Pressure:  1040.6637272363548
+Filtered pressure:  1040.255036946165
+Pressure:  1040.5337650871159
+Filtered pressure:  1040.187541789106
+Pressure:  1040.3797329704917
+Filtered pressure:  1040.120294381194
+Pressure:  1040.2426754642026
+Filtered pressure:  1040.0524937226455
+Pressure:  1040.0825173488959
+Filtered pressure:  1039.9834102534608
+Pressure:  1039.9432573605907
+Filtered pressure:  1039.9124412083622
+Pressure:  1039.804482172163
+Filtered pressure:  1039.8391509361384
+Pressure:  1039.6919801995618
+Filtered pressure:  1039.7632973873137
+Pressure:  1039.58194887344
+Filtered pressure:  1039.6848463927195
+Pressure:  1039.5018961559003
+Filtered pressure:  1039.6039755132551
+Pressure:  1039.4370494428683
+Filtered pressure:  1039.5210691827413
+Pressure:  1039.3938013493596
+Filtered pressure:  1039.4367066509674
+Pressure:  1039.3687132791483
+Filtered pressure:  1039.3516439329624
+Pressure:  1039.3146657467116
+Filtered pressure:  1039.266790659667
+Pressure:  1039.2469055272277
+Filtered pressure:  1039.1831824785374
+Pressure:  1039.1849113826302
+Filtered pressure:  1039.1019495249493
+Pressure:  1039.1037892282081
+Filtered pressure:  1039.0242814961262
+Pressure:  1039.0074616109594
+Filtered pressure:  1038.9513899920732
+Pressure:  1038.9028057895393
+Filtered pressure:  1038.8844690044127
+Pressure:  1038.8108832308703
+Filtered pressure:  1038.8246546866624
+Pressure:  1038.7232039437438
+Filtered pressure:  1038.7729857761306
+Pressure:  1038.6465385764102
+Filtered pressure:  1038.7303662076238
+Pressure:  1038.5838952977435
+Filtered pressure:  1038.69753152511
+Pressure:  1038.5504783551376
+Filtered pressure:  1038.6750206406366
+Pressure:  1038.5335011085042
+Filtered pressure:  1038.6631543078736
+Pressure:  1038.5305461864339
+Filtered pressure:  1038.6620213819158
+Breath time:  5.8
+Pressure:  1038.5445685366813
+Filtered pressure:  1038.6714735510045
+Pressure:  1038.594908828091
+Filtered pressure:  1038.6911287806327
+Pressure:  1038.6653961848867
+Filtered pressure:  1038.7203832385164
+Pressure:  1038.7312096609846
+Filtered pressure:  1038.7584310041004
+Pressure:  1038.8186211870138
+Filtered pressure:  1038.804290447528
+Pressure:  1038.8999082253206
+Filtered pressure:  1038.8568358298844
+Pressure:  1038.9895236154741
+Filtered pressure:  1038.9148324579542
+Pressure:  1039.0649019541113
+Filtered pressure:  1038.9769736354308
+Pressure:  1039.1334037212694
+Filtered pressure:  1039.0419176873631
+Pressure:  1039.2134568000104
+Filtered pressure:  1039.1083234835728
+Pressure:  1039.272395301867
+Filtered pressure:  1039.1748831279226
+Pressure:  1039.3107028516827
+Filtered pressure:  1039.2403507863332
+Pressure:  1039.3431012094857
+Filtered pressure:  1039.3035669689427
+Pressure:  1039.4030080134262
+Filtered pressure:  1039.3634779298611
+Pressure:  1039.4514150816367
+Filtered pressure:  1039.4191501673859
+Pressure:  1039.4700596479613
+Filtered pressure:  1039.4697802715505
+Pressure:  1039.4818271648699
+Filtered pressure:  1039.5147005662839
+Pressure:  1039.490640114426
+Filtered pressure:  1039.5533811323246
+Pressure:  1039.5004718426185
+Filtered pressure:  1039.5854288677388
+Pressure:  1039.5503310503843
+Filtered pressure:  1039.610584227739
+Pressure:  1039.6056154370758
+Filtered pressure:  1039.628716174943
+Pressure:  1039.6684778717554
+Filtered pressure:  1039.6398156846342
+Pressure:  1039.687122961422
+Filtered pressure:  1039.6439879396862
+Pressure:  1039.68857513993
+Filtered pressure:  1039.6414431845994
+Pressure:  1039.6792274688494
+Filtered pressure:  1039.6324861385792
+Pressure:  1039.6639706755193
+Filtered pressure:  1039.6175039039026
+Pressure:  1039.628349413359
+Filtered pressure:  1039.5969524214197
+Pressure:  1039.5910088610874
+Filtered pressure:  1039.5713416808317
+Pressure:  1039.541416608681
+Filtered pressure:  1039.5412200566668
+Pressure:  1039.4859153465209
+Filtered pressure:  1039.507158287609
+Pressure:  1039.433852813181
+Filtered pressure:  1039.4697337274818
+Pressure:  1039.3883999808168
+Filtered pressure:  1039.4295155549432
+Pressure:  1039.3351022430636
+Filtered pressure:  1039.387051626524
+Pressure:  1039.2847593050549
+Filtered pressure:  1039.3428575941768
+Pressure:  1039.2419934691336
+Filtered pressure:  1039.2974087925772
+Pressure:  1039.2115303071353
+Filtered pressure:  1039.2511352453453
+Pressure:  1039.1668291552223
+Filtered pressure:  1039.2044199565862
+Pressure:  1039.1260503841702
+Filtered pressure:  1039.1576004608492
+Pressure:  1039.0614699078
+Filtered pressure:  1039.1109734180816
+Pressure:  1039.0285357536463
+Filtered pressure:  1039.0648018706906
+Pressure:  1038.996568939371
+Filtered pressure:  1039.019324625186
+Pressure:  1038.9793762479421
+Filtered pressure:  1038.9747670736112
+Pressure:  1038.9668049481975
+Filtered pressure:  1038.9313526321766
+Pressure:  1038.9677723196226
+Filtered pressure:  1038.8893138655294
+Pressure:  1038.952782528825
+Filtered pressure:  1038.8489023156912
+Pressure:  1038.928712692779
+Filtered pressure:  1038.8103960954486
+Pressure:  1038.8646160173992
+Filtered pressure:  1038.7741044564323
+Pressure:  1038.8005195460066
+Filtered pressure:  1038.7403687997921
+Pressure:  1038.7329847600245
+Filtered pressure:  1038.7095599300253
+Pressure:  1038.6869946129127
+Filtered pressure:  1038.6820717029218
+Pressure:  1038.646699363328
+Filtered pressure:  1038.6583115251592
+Pressure:  1038.6004940317368
+Filtered pressure:  1038.6386883837802
+Pressure:  1038.5803463646935
+Filtered pressure:  1038.6235992058287
+Pressure:  1038.569278484062
+Filtered pressure:  1038.6134143792888
+Pressure:  1038.57244818685
+Filtered pressure:  1038.6084632210736
+Breath time:  5.5
+Pressure:  1038.5773371646571
+Filtered pressure:  1038.6090200748097
+Pressure:  1038.5871151535764
+Filtered pressure:  1038.6152915842968
+Pressure:  1038.6121520113109
+Filtered pressure:  1038.6274055423717
+Pressure:  1038.6408422622958
+Filtered pressure:  1038.6454015777342
+Pressure:  1038.6852750216985
+Filtered pressure:  1038.669223824947
+Pressure:  1038.7250336423565
+Filtered pressure:  1038.6987156337836
+Pressure:  1038.7579152604033
+Filtered pressure:  1038.7336163229277
+Pressure:  1038.7820390231045
+Filtered pressure:  1038.7735599768766
+Pressure:  1038.8090107553505
+Filtered pressure:  1038.818076320598
+Pressure:  1038.8428598977378
+Filtered pressure:  1038.8665937655392
+Pressure:  1038.88949654291
+Filtered pressure:  1038.9184447738219
+Pressure:  1038.9401087758151
+Filtered pressure:  1038.9728737079856
+Pressure:  1038.9904527299784
+Filtered pressure:  1039.0290473084258
+Pressure:  1039.0471904106062
+Filtered pressure:  1039.0860678722136
+Pressure:  1039.1022088731554
+Filtered pressure:  1039.1429891059463
+Pressure:  1039.1555081078802
+Filtered pressure:  1039.1988345022257
+Pressure:  1039.2070881053398
+Filtered pressure:  1039.2526179515096
+Pressure:  1039.2835424205866
+Filtered pressure:  1039.3033661530974
+Pressure:  1039.3481254991027
+Filtered pressure:  1039.3501422361455
+Pressure:  1039.414644453961
+Filtered pressure:  1039.392069854991
+Pressure:  1039.4536542681853
+Filtered pressure:  1039.4283569029492
+Pressure:  1039.4786930936846
+Filtered pressure:  1039.4583179176586
+Pressure:  1039.5081386021097
+Filtered pressure:  1039.4813942398612
+Pressure:  1039.5427423507963
+Filtered pressure:  1039.4971710284738
+Pressure:  1039.5736909793202
+Filtered pressure:  1039.5053903107198
+Pressure:  1039.5849751655842
+Filtered pressure:  1039.505959347925
+Pressure:  1039.596743366709
+Filtered pressure:  1039.4989537330175
+Pressure:  1039.586159697587
+Filtered pressure:  1039.4846148204954
+Pressure:  1039.563540348812
+Filtered pressure:  1039.463341333058
+Pressure:  1039.5072848756568
+Filtered pressure:  1039.4356752878184
+Pressure:  1039.4281937127041
+Filtered pressure:  1039.4022827225408
+Pressure:  1039.353293134233
+Filtered pressure:  1039.3639300478787
+Pressure:  1039.283550970672
+Filtered pressure:  1039.321457160625
+Pressure:  1039.2150446681665
+Filtered pressure:  1039.275748678121
+Pressure:  1039.1462706598431
+Filtered pressure:  1039.227704762921
+Pressure:  1039.0826548467567
+Filtered pressure:  1039.1782129925823
+Pressure:  1039.0389193352873
+Filtered pressure:  1039.1281226046065
+Pressure:  1039.0013091984913
+Filtered pressure:  1039.0782222318353
+Pressure:  1038.9634305986506
+Filtered pressure:  1039.0292219643845
+Pressure:  1038.9196948551573
+Filtered pressure:  1038.9817402614417
+Pressure:  1038.8968064188498
+Filtered pressure:  1038.936295922266
+Pressure:  1038.8741863567477
+Filtered pressure:  1038.8933050349772
+Pressure:  1038.8498468872394
+Filtered pressure:  1038.8530825686566
+Pressure:  1038.817662772336
+Filtered pressure:  1038.8158480693558
+Pressure:  1038.7884337932992
+Filtered pressure:  1038.7817347727919
+Pressure:  1038.7609241927719
+Filtered pressure:  1038.7508013577976
+Pressure:  1038.7532945523903
+Filtered pressure:  1038.7230455263984
+Pressure:  1038.7385187702791
+Filtered pressure:  1038.6984185959925
+Pressure:  1038.7190683719155
+Filtered pressure:  1038.6768403198573
+Pressure:  1038.6871529152074
+Filtered pressure:  1038.658213215834
+Pressure:  1038.665768328977
+Filtered pressure:  1038.6424357808298
+Pressure:  1038.6551833455403
+Filtered pressure:  1038.6294140913026
+Pressure:  1038.639225649492
+Filtered pressure:  1038.619071418501
+Pressure:  1038.635034562322
+Filtered pressure:  1038.6113556060648
+Pressure:  1038.6214942823465
+Filtered pressure:  1038.6062440618139
+Pressure:  1038.6146168478197
+Filtered pressure:  1038.6037463082453
+Breath time:  5.6
+Pressure:  1038.6136498937994
+Filtered pressure:  1038.6039041201013
+Pressure:  1038.611984905842
+Filtered pressure:  1038.6067893513164
+Pressure:  1038.6181099189803
+Filtered pressure:  1038.6124996149442
+Pressure:  1038.62568539299
+Filtered pressure:  1038.62115202741
+Pressure:  1038.6480370475415
+Filtered pressure:  1038.6328752645734
+Pressure:  1038.663027777516
+Filtered pressure:  1038.647800205938
+Pressure:  1038.6797378587437
+Filtered pressure:  1038.6660494712312
+Pressure:  1038.6996178542965
+Filtered pressure:  1038.6877261872746
+Pressure:  1038.7263753601499
+Filtered pressure:  1038.712902365777
+Pressure:  1038.747760023038
+Filtered pressure:  1038.7416073219133
+Pressure:  1038.7738191908725
+Filtered pressure:  1038.7738166137317
+Pressure:  1038.79348442107
+Filtered pressure:  1038.8094420280304
+Pressure:  1038.8227136074418
+Filtered pressure:  1038.8483231729092
+Pressure:  1038.8522113874888
+Filtered pressure:  1038.8902212513956
+Pressure:  1038.884180595801
+Filtered pressure:  1038.934815573648
+Pressure:  1038.9173321193732
+Filtered pressure:  1038.981703308757
+Pressure:  1038.9590805503221
+Filtered pressure:  1039.0304028765509
+Pressure:  1038.997605667269
+Filtered pressure:  1039.0803612334648
+Pressure:  1039.063104587066
+Filtered pressure:  1039.13096511518
+Pressure:  1039.127421287064
+Filtered pressure:  1039.1815560673892
+Pressure:  1039.188299628394
+Filtered pressure:  1039.2314488375766
+Pressure:  1039.256324039089
+Filtered pressure:  1039.2799524368568
+Pressure:  1039.315483745836
+Filtered pressure:  1039.3263929368763
+Pressure:  1039.387915386536
+Filtered pressure:  1039.3701368629195
+Pressure:  1039.454221390253
+Filtered pressure:  1039.4106138935247
+Pressure:  1039.5475547111555
+Filtered pressure:  1039.4473374894164
+Pressure:  1039.6352461027302
+Filtered pressure:  1039.4799220652894
+Pressure:  1039.6900009008498
+Filtered pressure:  1039.508095410988
+Pressure:  1039.7049411896817
+Filtered pressure:  1039.5317052934972
+Pressure:  1039.6889820952936
+Filtered pressure:  1039.5507195458576
+Pressure:  1039.6683486832678
+Filtered pressure:  1039.56521945669
+Pressure:  1039.616548737328
+Filtered pressure:  1039.5753868554634
+Pressure:  1039.5585716541393
+Filtered pressure:  1039.5814858611627
+Pressure:  1039.5212279013635
+Filtered pressure:  1039.583840745976
+Pressure:  1039.4834002457937
+Filtered pressure:  1039.5828117004896
+Pressure:  1039.4468081801188
+Filtered pressure:  1039.5787704377706
+Pressure:  1039.426123281506
+Filtered pressure:  1039.572077534648
+Pressure:  1039.4125838293098
+Filtered pressure:  1039.5630631980691
+Pressure:  1039.4037187872914
+Filtered pressure:  1039.5520127943907
+Pressure:  1039.4118321351673
+Filtered pressure:  1039.5391580267433
+Pressure:  1039.4398271361179
+Filtered pressure:  1039.5246741303724
+Pressure:  1039.4798583349325
+Filtered pressure:  1039.5086829221777
+Pressure:  1039.520857484876
+Filtered pressure:  1039.4912610379529
+Pressure:  1039.5468656202681
+Filtered pressure:  1039.4724522741824
+Pressure:  1039.5448785191877
+Filtered pressure:  1039.4522826732277
+Pressure:  1039.5072666006713
+Filtered pressure:  1039.4307768848028
+Pressure:  1039.4682028778668
+Filtered pressure:  1039.4079744013773
+Pressure:  1039.425968075079
+Filtered pressure:  1039.3839444602995
+Pressure:  1039.4023795478818
+Filtered pressure:  1039.3587986662114
+Pressure:  1039.395985583504
+Filtered pressure:  1039.3327006523077
+Pressure:  1039.3660030616445
+Filtered pressure:  1039.3058723351353
+Pressure:  1039.3100650139704
+Filtered pressure:  1039.2785965260687
+Pressure:  1039.2582136068731
+Filtered pressure:  1039.2512158603843
+Pressure:  1039.2181301190326
+Filtered pressure:  1039.2241281970269
+Pressure:  1039.189115082717
+Filtered pressure:  1039.1977788100123
+Pressure:  1039.1593479778765
+Filtered pressure:  1039.172649809681
+Pressure:  1039.146291552851
+Filtered pressure:  1039.1492472885652
+Pressure:  1039.1330196238753
+Filtered pressure:  1039.1280866944048
+Pressure:  1039.1197476873592
+Filtered pressure:  1039.1096769147753
+Pressure:  1039.1052929388293
+Filtered pressure:  1039.094503536462
+Pressure:  1039.094492523761
+Filtered pressure:  1039.0830117340834
+Pressure:  1039.0777817199712
+Filtered pressure:  1039.0755892527716
+Pressure:  1039.064026120289
+Filtered pressure:  1039.0725499753094
+Breath time:  6.3
+Pressure:  1039.067948710513
+Filtered pressure:  1039.0741185946515
+Pressure:  1039.0740744500245
+Filtered pressure:  1039.0804169359164
+Pressure:  1039.0789644417414
+Filtered pressure:  1039.0914524789428
+Pressure:  1039.0816512899169
+Filtered pressure:  1039.1071096220091
+Pressure:  1039.08654129919
+Filtered pressure:  1039.1271442020911
+Pressure:  1039.1029838574766
+Filtered pressure:  1039.151181745557
+Pressure:  1039.1316781281655
+Filtered pressure:  1039.1787198567442
+Pressure:  1039.1572019088512
+Filtered pressure:  1039.2091350510482
+Pressure:  1039.1758478729523
+Filtered pressure:  1039.2416942025764
+Pressure:  1039.206530269934
+Filtered pressure:  1039.275570610346
+Pressure:  1039.2328062765246
+Filtered pressure:  1039.309864497486
+Pressure:  1039.2801999709004
+Filtered pressure:  1039.343627545388
+Pressure:  1039.3293133274476
+Filtered pressure:  1039.3758908288785
+Pressure:  1039.3853048543206
+Filtered pressure:  1039.4056952670537
+Pressure:  1039.442532226758
+Filtered pressure:  1039.4321234575766
+Pressure:  1039.497072456393
+Filtered pressure:  1039.4543315489684
+Pressure:  1039.548441438055
+Filtered pressure:  1039.4715796562145
+Pressure:  1039.5848187153395
+Filtered pressure:  1039.483259265417
+Pressure:  1039.6167377348195
+Filtered pressure:  1039.4889161206431
+Pressure:  1039.6312453631112
+Filtered pressure:  1039.4882672481663
+Pressure:  1039.628022722568
+Filtered pressure:  1039.481211047503
+Pressure:  1039.6041659102943
+Filtered pressure:  1039.4678297531168
+Pressure:  1039.5469381403238
+Filtered pressure:  1039.4483840240753
+Pressure:  1039.4725155081396
+Filtered pressure:  1039.4232999184933
+Pressure:  1039.4034675501625
+Filtered pressure:  1039.393149009243
+Pressure:  1039.3322162302618
+Filtered pressure:  1039.3586228418776
+Pressure:  1039.2558064543327
+Filtered pressure:  1039.320503273549
+Pressure:  1039.1939046741006
+Filtered pressure:  1039.279630430279
+Pressure:  1039.1383972619699
+Filtered pressure:  1039.2368700705838
+Pressure:  1039.0887474359456
+Filtered pressure:  1039.1930820558414
+Pressure:  1039.0491992294214
+Filtered pressure:  1039.1490914234855
+Pressure:  1039.0278132391597
+Filtered pressure:  1039.1056632680495
+Pressure:  1039.000785114027
+Filtered pressure:  1039.0634822920929
+Pressure:  1038.9833216859533
+Filtered pressure:  1039.023137530479
+Pressure:  1038.945976607431
+Filtered pressure:  1038.9851124116888
+Pressure:  1038.9228710240734
+Filtered pressure:  1038.9497800249285
+Pressure:  1038.9071269547994
+Filtered pressure:  1038.9174032230742
+Pressure:  1038.8827853968903
+Filtered pressure:  1038.8881390066156
+Pressure:  1038.8820330722028
+Filtered pressure:  1038.8620464957917
+Pressure:  1038.8803135816045
+Filtered pressure:  1038.8390977043819
+Pressure:  1038.8591961316292
+Filtered pressure:  1038.8191902828387
+Pressure:  1038.8334038162936
+Filtered pressure:  1038.8021614069085
+Pressure:  1038.8005189013002
+Filtered pressure:  1038.7878020511503
+Pressure:  1038.787461240084
+Filtered pressure:  1038.7758709906182
+Pressure:  1038.7805833006387
+Filtered pressure:  1038.766107990544
+Target breath time:  5.6
+===== GUIDE BREATH TIMES =====
+Breath time:  5.6
+Breath time:  5.3
+Breath time:  5.9
+===== GUIDE BREATH TIMES =====
+Breath time:  5.6
+Breath time:  5.3
+Breath time:  5.9
+Breath time:  5.4
+Breath time:  5.1
+VALIDATE COUNT:  0
+START IDX:  0
+Eval state:  True
+Target breath time:  6.1
+===== GUIDE BREATH TIMES =====
+Breath time:  4.2
+Breath time:  6.8
+Breath time:  6.4
+Breath time:  5.1
+VALIDATE COUNT:  0
+START IDX:  0
+===== GUIDE BREATH TIMES =====
+Breath time:  4.2
+Breath time:  6.8
+Breath time:  6.4
+Breath time:  5.1
+Breath time:  6.3
+Breath time:  6.2
+VALIDATE COUNT:  1
+START IDX:  1
+===== GUIDE BREATH TIMES =====
+Breath time:  0.3
+Breath time:  6.4
+Breath time:  6.4
+Breath time:  5.1
+Breath time:  6.3
+Breath time:  6.0
+Breath time:  6.0
+VALIDATE COUNT:  2
+START IDX:  1
+===== GUIDE BREATH TIMES =====
+Breath time:  6.3
+Breath time:  6.4
+Breath time:  5.1
+Breath time:  6.3
+Breath time:  6.0
+Breath time:  5.9
+Breath time:  6.5
+VALIDATE COUNT:  3
+START IDX:  1
+===== GUIDE BREATH TIMES =====
+Breath time:  6.3
+Breath time:  5.1
+Breath time:  6.3
+Breath time:  6.0
+Breath time:  5.9
+Breath time:  6.4
+Breath time:  5.9
+VALIDATE COUNT:  4
+START IDX:  1
+===== GUIDE BREATH TIMES =====
+Breath time:  5.0
+Breath time:  6.3
+Breath time:  6.0
+Breath time:  5.9
+Breath time:  6.4
+Breath time:  5.9
+Breath time:  6.5
+Breath time:  6.0
+VALIDATE COUNT:  5
+START IDX:  1
+Eval state:  True
+Target breath time:  6.6
+===== GUIDE BREATH TIMES =====
+Breath time:  7.4
+Breath time:  6.9
+Breath time:  5.8
+===== GUIDE BREATH TIMES =====
+Breath time:  7.4
+Breath time:  6.9
+Breath time:  5.8
+Breath time:  6.7
+VALIDATE COUNT:  0
+START IDX:  0
+===== GUIDE BREATH TIMES =====
+Breath time:  7.4
+Breath time:  6.9
+Breath time:  5.8
+Breath time:  6.7
+Breath time:  6.9
+Breath time:  6.3
+VALIDATE COUNT:  1
+START IDX:  1
+===== GUIDE BREATH TIMES =====
+Breath time:  6.8
+Breath time:  5.8
+Breath time:  6.7
+Breath time:  6.9
+Breath time:  6.1
+Breath time:  6.9
+VALIDATE COUNT:  2
+START IDX:  1
+===== GUIDE BREATH TIMES =====
+Breath time:  5.7
+Breath time:  6.7
+Breath time:  6.9
+Breath time:  6.1
+Breath time:  6.9
+Breath time:  6.4
+Breath time:  6.3
+VALIDATE COUNT:  3
+START IDX:  1
+Eval state:  True
+Target breath time:  7.1
+===== GUIDE BREATH TIMES =====
+Breath time:  7.1
+Breath time:  8.1
+Breath time:  5.9
+===== GUIDE BREATH TIMES =====
+Breath time:  7.1
+Breath time:  8.1
+Breath time:  5.9
+Breath time:  7.4
+VALIDATE COUNT:  0
+START IDX:  0
+===== GUIDE BREATH TIMES =====
+Breath time:  7.1
+Breath time:  8.1
+Breath time:  5.9
+Breath time:  7.4
+Breath time:  7.5
+Breath time:  6.3
+VALIDATE COUNT:  1
+START IDX:  1
+===== GUIDE BREATH TIMES =====
+Breath time:  8.0
+Breath time:  5.9
+Breath time:  7.4
+Breath time:  7.5
+Breath time:  6.3
+Breath time:  7.3
+VALIDATE COUNT:  2
+START IDX:  1
+===== GUIDE BREATH TIMES =====
+Breath time:  5.8
+Breath time:  7.4
+Breath time:  7.5
+Breath time:  6.3
+Breath time:  7.3
+Breath time:  8.7
+Breath time:  5.6
+VALIDATE COUNT:  3
+START IDX:  1
+===== GUIDE BREATH TIMES =====
+Breath time:  7.3
+Breath time:  7.5
+Breath time:  6.3
+Breath time:  7.3
+Breath time:  8.7
+Breath time:  5.6
+Breath time:  7.1
+VALIDATE COUNT:  4
+START IDX:  1
+Keyboard Interrupt
