@@ -276,7 +276,7 @@ def main():
         curr_pressure = bmp280.get_pressure()
         pressures.append(curr_pressure)
 
-         ### For Plotting
+        ### For Plotting
         now = time.time() - start_ts
         filtered_curr = real_time_lowpass_filter(pressures)
         log_data["time"].append(now)
