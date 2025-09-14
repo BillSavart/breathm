@@ -48,6 +48,9 @@ linear_actuator_max_distance = 50
 success_threshold = 15
 fail_threshold = 50
 
+output_file = "raw_data.csv"
+start_ts = time.time()
+
 def butter_lowpass(cutoff, fs, order=5):
     nyquist = 0.5 * fs
     normal_cutoff = cutoff / nyquist
@@ -262,73 +265,80 @@ def main():
     la_position = 0
     la_direction = 0
 
-    while True:
-        curr_pressure = bmp280.get_pressure()
-        pressures.append(curr_pressure)
+    with open(output_file, "w", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow(["time", "pressure"])
+        while True:
+            curr_pressure = bmp280.get_pressure()
+            pressures.append(curr_pressure)
 
-        if (machine_state == MachineState["MIRROR"]):
-            curr_state_count += sampling_rate
-            if (len(pressures) > 1):
-                la_position, la_direction = mirror_breathing(curr_pressure, pressures[-2], la_position, la_direction, vibration_pwm)
+            now = time.time() - start_ts
+            writer.writerow([now, curr_pressure])
+            f.flush()
 
-        elif (machine_state == MachineState["GUIDE"]):
-            curr_state_count += sampling_rate
-            # curr_pressure = real_time_lowpass_filter(pressures)
-            # pressures.pop(0)
-            machine_breath, la_position = guide_breathing(machine_breath, target_breath_time, la_position)
+            if (machine_state == MachineState["MIRROR"]):
+                curr_state_count += sampling_rate
+                if (len(pressures) > 1):
+                    la_position, la_direction = mirror_breathing(curr_pressure, pressures[-2], la_position, la_direction, vibration_pwm)
 
-        if ((machine_state == MachineState["MIRROR"] and len(pressures) > 1 and curr_pressure > pressures[-2]) or 
-            (machine_state == MachineState["GUIDE"] and curr_pressure > prev_filtered_pressure)): # inhale
-            if (user_state != UserState["INHALE"]):
-                # TRANSITION FROM EXHALE TO INHALE
-                # USER FINISH 1 BREATH TIME
+            elif (machine_state == MachineState["GUIDE"]):
+                curr_state_count += sampling_rate
+                # curr_pressure = real_time_lowpass_filter(pressures)
+                # pressures.pop(0)
+                machine_breath, la_position = guide_breathing(machine_breath, target_breath_time, la_position)
 
-                if (machine_state == MachineState["MIRROR"] and curr_state_count >= 60):
-                    # INITIALIZE GUIDE PHASE
-                    target_breath_time = init_guide_phase(pressures)
-                    print("Target breath time: ", target_breath_time)
+            if ((machine_state == MachineState["MIRROR"] and len(pressures) > 1 and curr_pressure > pressures[-2]) or 
+                (machine_state == MachineState["GUIDE"] and curr_pressure > prev_filtered_pressure)): # inhale
+                if (user_state != UserState["INHALE"]):
+                    # TRANSITION FROM EXHALE TO INHALE
+                    # USER FINISH 1 BREATH TIME
 
-                    machine_state = MachineState["GUIDE"]
-                    curr_state_count = 0
-                    pressures = []
-
-                    vibrate_duty_cycle = 0
-                    vibration_pwm.ChangeDutyCycle(vibrate_duty_cycle)
-
-                elif (machine_state == MachineState["GUIDE"]):
-                    if (guide_window_reach == False and curr_state_count >= target_breath_time * sampling_window): # and curr_state_count > 30
-                        # AFTER 4 INITIAL GUIDE
-                        eval_state, validate_count, remove_count, pressures, target_breath_time  = validate_stable(pressures, target_breath_time, validate_count, remove_count)
-                        curr_state_count = 0
-                        guide_window_reach = True
-
-                    elif (guide_window_reach == True and curr_state_count >= target_breath_time):
-                        # AFTER 1 GUIDE
-                        eval_state, validate_count, remove_count, pressures, target_breath_time = validate_stable(pressures, target_breath_time, validate_count, remove_count)
-                        curr_state_count = 0
-
-                    if (eval_state == EvalState["FAIL"] or eval_state == EvalState["SUCCESS"]):
-                        print("Eval state: ", eval_state == EvalState["SUCCESS"])
-                        guide_window_reach = False
-                        eval_state = EvalState["NONE"]
-                        validate_count = 0
-                        remove_count = 0
-                        pressures = []
+                    if (machine_state == MachineState["MIRROR"] and curr_state_count >= 60):
+                        # INITIALIZE GUIDE PHASE
+                        target_breath_time = init_guide_phase(pressures)
                         print("Target breath time: ", target_breath_time)
 
-                # RESET STATE
-                user_state = UserState["INHALE"]
+                        machine_state = MachineState["GUIDE"]
+                        curr_state_count = 0
+                        pressures = []
 
-        elif ((machine_state == MachineState["MIRROR"] and len(pressures) > 1 and curr_pressure < pressures[-2]) or 
-            (machine_state == MachineState["GUIDE"] and curr_pressure < prev_filtered_pressure)): # exhale
-            if (user_state != UserState["EXHALE"]):
-                # TRANSITION FROM INHALE TO EXHALE
-                user_state = UserState["EXHALE"]
+                        vibrate_duty_cycle = 0
+                        vibration_pwm.ChangeDutyCycle(vibrate_duty_cycle)
 
-        if (machine_state == MachineState["GUIDE"]):
-            prev_filtered_pressure = curr_pressure
+                    elif (machine_state == MachineState["GUIDE"]):
+                        if (guide_window_reach == False and curr_state_count >= target_breath_time * sampling_window): # and curr_state_count > 30
+                            # AFTER 4 INITIAL GUIDE
+                            eval_state, validate_count, remove_count, pressures, target_breath_time  = validate_stable(pressures, target_breath_time, validate_count, remove_count)
+                            curr_state_count = 0
+                            guide_window_reach = True
+
+                        elif (guide_window_reach == True and curr_state_count >= target_breath_time):
+                            # AFTER 1 GUIDE
+                            eval_state, validate_count, remove_count, pressures, target_breath_time = validate_stable(pressures, target_breath_time, validate_count, remove_count)
+                            curr_state_count = 0
+
+                        if (eval_state == EvalState["FAIL"] or eval_state == EvalState["SUCCESS"]):
+                            print("Eval state: ", eval_state == EvalState["SUCCESS"])
+                            guide_window_reach = False
+                            eval_state = EvalState["NONE"]
+                            validate_count = 0
+                            remove_count = 0
+                            pressures = []
+                            print("Target breath time: ", target_breath_time)
+
+                    # RESET STATE
+                    user_state = UserState["INHALE"]
+
+            elif ((machine_state == MachineState["MIRROR"] and len(pressures) > 1 and curr_pressure < pressures[-2]) or 
+                (machine_state == MachineState["GUIDE"] and curr_pressure < prev_filtered_pressure)): # exhale
+                if (user_state != UserState["EXHALE"]):
+                    # TRANSITION FROM INHALE TO EXHALE
+                    user_state = UserState["EXHALE"]
+
+            if (machine_state == MachineState["GUIDE"]):
+                prev_filtered_pressure = curr_pressure
             
-        time.sleep(sampling_rate)
+            time.sleep(sampling_rate)
 
 if __name__ == "__main__":
     try:
