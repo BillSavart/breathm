@@ -59,15 +59,15 @@ def butter_lowpass(cutoff, fs, order=4):
     return b, a
 
 def lowpass_filter(data, cutoff, fs, order=4):
-    b ,a = butter_lowpass(cutoff, fs, order=order)
-    try:
-        y = filtfilt(b, a, data)
-        return y
-    except ValueError:
-        return np.array(data)
-    # b, a = butter_lowpass(cutoff, fs, order=order)
-    #y = filtfilt(b, a, data)
-    #return y
+    #b ,a = butter_lowpass(cutoff, fs, order=order)
+   # try:
+    #    y = filtfilt(b, a, data)
+     #   return y
+    #except ValueError:
+     #   return np.array(data)
+    b, a = butter_lowpass(cutoff, fs, order=order)
+    y = filtfilt(b, a, data)
+    return y
 
 def init_guide_phase(pressures):
     filtered_pressures = lowpass_filter(pressures, lowpass_cutoff, lowpass_fs)
@@ -281,7 +281,7 @@ def main():
         filtered_curr = real_time_lowpass_filter(pressures)
         log_data["time"].append(now)
         log_data["raw"].append(curr_pressure)
-        log_data["filtered"].append(filtered_curr)
+        ßlog_data["filtered"].append(filtered_curr)
         ### For Plotting
 
         if (machine_state == MachineState["MIRROR"]):
@@ -356,7 +356,7 @@ if __name__ == "__main__":
 
         end_time = log_data["time"][-1]
 
-        valid_indices = [i for i, t in enumerate(log_data["time"]) if t >= 3 and t < end_time - 2]
+        valid_indices = [i for i, t in enumerate(log_data["time"]) if t >= 5 and t < end_time - 5]
         filtered_time = [log_data["time"][i] for i in valid_indices]
         filtered_raw = [log_data["raw"][i] for i in valid_indices]
         filtered_filtered = [log_data["filtered"][i] for i in valid_indices]
@@ -367,11 +367,9 @@ if __name__ == "__main__":
         plt.figure(figsize=(10, 4))
         plt.plot(log_data["time"], log_data["raw"], label="Raw Pressure", alpha=0.7)
         plt.plot(log_data["time"], log_data["filtered"], label="Filtered Pressure", linewidth=2)
-        plt.xlabel("Time (s)")
-        plt.ylabel("Pressure (Pa)")
+        plt.ylabel("Pressure")
         plt.gca().ticklabel_format(style='plain', axis='y')
         plt.gca().set_yticklabels([f"{y:.2f}" for y in plt.gca().get_yticks()])
-        plt.title("Raw vs Filtered Pressure Over Time")
         plt.legend()
         plt.tight_layout()
         plt.savefig("wave_form.png", dpi=150)
