@@ -2,12 +2,12 @@
 
 import sys
 import time
+import csv
 from enum import Enum
 import RPi.GPIO as GPIO
 from bmp280 import BMP280
 import numpy as np
 from scipy.signal import butter, filtfilt
-import matplotlib.pyplot as plt
 
 try:
     from smbus2 import SMBus
@@ -48,26 +48,16 @@ linear_actuator_max_distance = 50
 success_threshold = 15
 fail_threshold = 50
 
-# For plotting
-log_data = {"time": [], "raw": [], "filtered": []}
-start_ts = time.time()
-
-def butter_lowpass(cutoff, fs, order=4):
+def butter_lowpass(cutoff, fs, order=5):
     nyquist = 0.5 * fs
     normal_cutoff = cutoff / nyquist
     b, a = butter(order, normal_cutoff, btype='low', analog=False)
     return b, a
 
-def lowpass_filter(data, cutoff, fs, order=4):
-    b ,a = butter_lowpass(cutoff, fs, order=order)
-    try:
-        y = filtfilt(b, a, data)
-        return y
-    except ValueError:
-        return np.array(data)
-    #b, a = butter_lowpass(cutoff, fs, order=order)
-    #y = filtfilt(b, a, data)
-    #return y
+def lowpass_filter(data, cutoff, fs, order=5):
+    b, a = butter_lowpass(cutoff, fs, order=order)
+    y = filtfilt(b, a, data)
+    return y
 
 def init_guide_phase(pressures):
     filtered_pressures = lowpass_filter(pressures, lowpass_cutoff, lowpass_fs)
@@ -101,7 +91,7 @@ def init_guide_phase(pressures):
 
 def real_time_lowpass_filter(pressures):
     filtered_pressures = lowpass_filter(pressures, lowpass_cutoff, lowpass_fs)
-    return filtered_pressures[-1] if len(filtered_pressures) > 0 else 0
+    return filtered_pressures[-1]
 
 def validate_stable(pressures, target_breath_time, validate_count, remove_count):
     filtered_pressures = lowpass_filter(pressures, lowpass_cutoff, lowpass_fs)
@@ -276,14 +266,6 @@ def main():
         curr_pressure = bmp280.get_pressure()
         pressures.append(curr_pressure)
 
-        ### For Plotting
-        now = time.time() - start_ts
-        filtered_curr = real_time_lowpass_filter(pressures)
-        log_data["time"].append(now)
-        log_data["raw"].append(curr_pressure)
-        log_data["filtered"].append(filtered_curr)
-        ### For Plotting
-
         if (machine_state == MachineState["MIRROR"]):
             curr_state_count += sampling_rate
             if (len(pressures) > 1):
@@ -345,7 +327,7 @@ def main():
 
         if (machine_state == MachineState["GUIDE"]):
             prev_filtered_pressure = curr_pressure
-
+            
         time.sleep(sampling_rate)
 
 if __name__ == "__main__":
@@ -353,27 +335,5 @@ if __name__ == "__main__":
         main()
     except KeyboardInterrupt:
         print("Keyboard Interrupt")
-
-        end_time = log_data["time"][-1]
-
-        valid_indices = [i for i, t in enumerate(log_data["time"]) if t >= 5 and t < end_time - 5]
-        filtered_time = [log_data["time"][i] for i in valid_indices]
-        filtered_raw = [log_data["raw"][i] for i in valid_indices]
-        filtered_filtered = [log_data["filtered"][i] for i in valid_indices]
-        log_data["time"] = filtered_time
-        log_data["raw"] = filtered_raw
-        log_data["filtered"] = filtered_filtered
-
-        plt.figure(figsize=(10, 4))
-        plt.plot(log_data["time"], log_data["raw"], label="Raw Pressure", alpha=0.7)
-        plt.plot(log_data["time"], log_data["filtered"], label="Filtered Pressure", linewidth=2)
-        plt.ylabel("Pressure")
-        plt.gca().ticklabel_format(style='plain', axis='y')
-        plt.gca().set_yticklabels([f"{y:.2f}" for y in plt.gca().get_yticks()])
-        plt.legend()
-        plt.tight_layout()
-        plt.savefig("wave_form.png", dpi=150)
-        plt.show()
-
         GPIO.cleanup()
         sys.exit(0)
