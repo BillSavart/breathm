@@ -52,13 +52,13 @@ fail_threshold = 50
 log_data = {"time": [], "raw": [], "filtered": []}
 start_ts = time.time()
 
-def butter_lowpass(cutoff, fs, order=5):
+def butter_lowpass(cutoff, fs, order=4):
     nyquist = 0.5 * fs
     normal_cutoff = cutoff / nyquist
     b, a = butter(order, normal_cutoff, btype='low', analog=False)
     return b, a
 
-def lowpass_filter(data, cutoff, fs, order=5):
+def lowpass_filter(data, cutoff, fs, order=4):
     b ,a = butter_lowpass(cutoff, fs, order=order)
     try:
         y = filtfilt(b, a, data)
