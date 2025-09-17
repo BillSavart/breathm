@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from scipy.signal import butter, filtfilt
+from matplotlib.ticker import MultipleLocator
 
 
 def butter_lowpass(cutoff=2, fs=60, order=4):
@@ -34,8 +35,9 @@ filtered = filtered[mask]
 
 plt.figure(figsize=(10,4))
 plt.plot(time_arr, raw, label="Raw", alpha=0.7)
-plt.plot(time_arr, filtered, label="Filtered", linewidth=2)
+#plt.plot(time_arr, filtered, label="Filtered", linewidth=2)
+plt.gca().yaxis.set_major_locator(MultipleLocator(0.5))
 plt.ylabel("Pressure")
 plt.legend()
 plt.tight_layout()
-plt.savefig("waveform_csv.png", dpi=150)
+plt.savefig("waveform_csv_raw.png", dpi=150)
