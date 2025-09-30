@@ -218,7 +218,7 @@ def guide_breathing(machine_breath, target_breath, position):
 
 def main():
     GPIO.setmode(GPIO.BCM)
-
+    GPIO.setwarnings(False)
     # init linear actuators
     GPIO.setup(in1,GPIO.OUT)
     GPIO.setup(in2,GPIO.OUT)
