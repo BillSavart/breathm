@@ -1,29 +1,34 @@
-# rpi_server.py
 import socket
 import threading
 import subprocess
+import os
+import signal
 
 HOST = "192.168.0.201"
 PORT = 5005
 
+helloworld_process = None
+
 def handle_command(cmd: str):
+    global helloworld_process
+
     cmd = cmd.strip()
     print(f"[SERVER] Received command: {cmd}")
 
     if cmd == "FEED_PET":
-        # 直接呼叫某個 Python 函式或腳本
-        subprocess.Popen(["python3", "helloworld.py"])
-        return "OK: FEED_PET\n"
+        if helloworld_process is None or helloworld_process.poll() is not None:
+            helloworld_process = subprocess.Popen(["python3", "helloworld.py"])
+            return "OK: FEED_PET\n"
+        else:
+            return "INFO: helloworld.py already running\n"
 
     elif cmd == "TOGGLE_LIGHT":
-        subprocess.Popen(["python3", "helloworld.py"])
-        return "OK: TOGGLE_LIGHT\n"
-
-    elif cmd.startswith("START_SCRIPT:"):
-        script_name = cmd.split(":", 1)[1]
-        subprocess.Popen(["python3", f"{script_name}.py"])
-        return f"OK: START_SCRIPT {script_name}\n"
-
+        if helloworld_process is not None and helloworld_process.poll() is None:
+            os.kill(helloworld_process.pid, signal.SIGTERM)
+            helloworld_process = None
+            return "OK: TOGGLE_LIGHT\n"
+        else:
+            return "INFO: helloworld.py is NOT running\n"
     else:
         return "ERROR: UNKNOWN_COMMAND\n"
 
@@ -38,7 +43,6 @@ def client_thread(conn, addr):
                 print(f"[SERVER] Client {addr} disconnected")
                 break
             buffer += data
-            # 以換行符號分割指令
             while b"\n" in buffer:
                 line, buffer = buffer.split(b"\n", 1)
                 response = handle_command(line.decode("utf-8"))
