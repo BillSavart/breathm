@@ -7,28 +7,28 @@ import signal
 HOST = "192.168.0.201"
 PORT = 5005
 
-helloworld_process = None
+breathm_process = None
 
 def handle_command(cmd: str):
-    global helloworld_process
+    global breathm_process
 
     cmd = cmd.strip()
     print(f"[SERVER] Received command: {cmd}")
 
-    if cmd == "FEED_PET":
-        if helloworld_process is None or helloworld_process.poll() is not None:
-            helloworld_process = subprocess.Popen(["python3", "helloworld.py"])
-            return "OK: FEED_PET\n"
+    if cmd == "ACTIVATE":
+        if breathm_process is None or breathm_process.poll() is not None:
+            breathm_process = subprocess.Popen(["python3", "final_version.py"])
+            return "OK: ACTIVATE\n"
         else:
-            return "INFO: helloworld.py already running\n"
+            return "INFO: final_version.py already running\n"
 
-    elif cmd == "TOGGLE_LIGHT":
-        if helloworld_process is not None and helloworld_process.poll() is None:
-            os.kill(helloworld_process.pid, signal.SIGTERM)
-            helloworld_process = None
-            return "OK: TOGGLE_LIGHT\n"
+    elif cmd == "DEACTIVATE":
+        if breathm_process is not None and breathm_process.poll() is None:
+            os.kill(breathm_process.pid, signal.SIGTERM)
+            breathm_process = None
+            return "OK: DEACTIVATE\n"
         else:
-            return "INFO: helloworld.py is NOT running\n"
+            return "INFO: final_version.py is NOT running\n"
     else:
         return "ERROR: UNKNOWN_COMMAND\n"
 
