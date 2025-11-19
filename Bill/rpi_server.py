@@ -3,6 +3,7 @@ import threading
 import subprocess
 import os
 import signal
+from self_check import run_self_check
 
 HOST = "192.168.0.201"
 PORT = 5005
@@ -50,6 +51,10 @@ def client_thread(conn, addr):
 
 
 def main():
+    if not run_self_check():
+        print("[SERVER] Self-check fails. System terminates")
+        return
+
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         s.bind((HOST, PORT))
