@@ -5,7 +5,7 @@ import os
 import signal
 from self_check import run_self_check
 
-HOST = "192.168.0.201"
+HOST = "172.20.10.4"
 PORT = 5005
 
 breathm_process = None
@@ -18,7 +18,7 @@ def handle_command(cmd: str):
 
     if cmd == "ACTIVATE":
         if breathm_process is None or breathm_process.poll() is not None:
-            breathm_process = subprocess.Popen(["python3", "final_version.py"])
+            breathm_process = subprocess.Popen(["python3", "without_vibration.py"])
             return "OK: ACTIVATE\n"
         else:
             return "INFO: final_version.py already running\n"

@@ -11,8 +11,8 @@ GPIO.setup(in2, GPIO.OUT)
 GPIO.setup(en, GPIO.OUT)
 
 # 縮
-GPIO.output(in1, GPIO.LOW)
-GPIO.output(in2, GPIO.HIGH)
+GPIO.output(in1, GPIO.HIGH)
+GPIO.output(in2, GPIO.LOW)
 p = GPIO.PWM(en, 800)
 p.start(100)
 
