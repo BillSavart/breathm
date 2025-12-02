@@ -18,7 +18,7 @@ def handle_command(cmd: str):
 
     if cmd == "ACTIVATE":
         if breathm_process is None or breathm_process.poll() is not None:
-            breathm_process = subprocess.Popen(["python3", "without_vibration.py"])
+            breathm_process = subprocess.Popen(["python3", "fix_version.py"])
             return "OK: ACTIVATE\n"
         else:
             return "INFO: final_version.py already running\n"

@@ -226,7 +226,7 @@ def main():
                 )
                 
                 # Check for Phase Transition using WALL CLOCK TIME
-                if time.time() - phase_start_time >= 60.0:
+                if time.time() - phase_start_time >= 5.0:
                     print("\n" + "="*30)
                     print(">>> TIMEOUT: Switching to GUIDE Phase")
                     print("="*30 + "\n")
