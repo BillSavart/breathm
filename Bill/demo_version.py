@@ -14,8 +14,8 @@ except ImportError:
     from smbus import SMBus
 
 class MachineState(Enum):
-    MIRROR = 0
-    GUIDE = 1
+    WARMUP = -1
+    GUIDE = 1 # 只剩 Guide 階段
 
 class UserState(Enum):
     INHALE = 0
@@ -30,14 +30,12 @@ class EvalState(Enum):
 in1 = 23
 in2 = 24
 en = 25
-# Vibration pin removed
 
-# --- Parameters from Thesis ---
-# Thesis specified Sampling Frequency fs = 60 Hz
-sampling_rate = 1.0 / 60.0  # Approx 0.0167 seconds
-lowpass_fs = 60.0           # Matches the actual execution speed
-lowpass_cutoff = 2.0        # Cut-off frequency 2Hz
-lowpass_order = 4           # Degree 4
+# --- Parameters ---
+sampling_rate = 1.0 / 60.0  
+lowpass_fs = 60.0           
+lowpass_cutoff = 2.0        
+lowpass_order = 4           
 
 # Other parameters
 sampling_window = 4
@@ -45,27 +43,21 @@ increase_breath_time = 0.5
 linear_actuator_max_distance = 50
 success_threshold = 15
 fail_threshold = 50
+warmup_duration = 5.0 # 暖機 5 秒
 
 # --- Real-time Filter Class ---
 class RealTimeFilter:
-    def __init__(self, order, cutoff, fs):
+    def __init__(self, order, cutoff, fs, initial_value=0.0):
         nyquist = 0.5 * fs
         normal_cutoff = cutoff / nyquist
         self.b, self.a = butter(order, normal_cutoff, btype='low', analog=False)
-        self.zi = lfilter_zi(self.b, self.a)
+        self.zi = lfilter_zi(self.b, self.a) * initial_value
     
     def process(self, value):
         filtered_value, self.zi = lfilter(self.b, self.a, [value], zi=self.zi)
         return filtered_value[0]
 
 # --- Helper Functions ---
-
-def init_guide_phase(breath_times):
-    if not breath_times:
-        return 3.0 # Fallback
-    target_breath_time = np.median(breath_times)
-    print(f"Init Guide Phase: Median Breath Time calculated as {target_breath_time:.2f}s")
-    return target_breath_time
 
 def validate_stable(breath_times, target_breath_time):
     if len(breath_times) < sampling_window:
@@ -74,8 +66,6 @@ def validate_stable(breath_times, target_breath_time):
     recent_breaths = np.array(breath_times[-sampling_window:])
     deviations = ((recent_breaths - target_breath_time) / target_breath_time) * 100
     
-    # print(f"Validation Deviations: {deviations}") # Optional debug print
-
     next_target = target_breath_time
     state = EvalState.NONE
 
@@ -99,39 +89,19 @@ def move_linear_actuator(direction):
         GPIO.output(in1, GPIO.LOW)
         GPIO.output(in2, GPIO.LOW)
 
-def mirror_breathing_logic(curr_filtered, prev_filtered, position, direction):
-    # Removed vibration_pwm argument and logic
-    is_inhaling = curr_filtered > prev_filtered
-    is_exhaling = curr_filtered < prev_filtered
-
-    if is_inhaling: # Inhale
-        if position <= linear_actuator_max_distance:
-            direction = 1
-        else:
-            direction = 0
-
-    elif is_exhaling: # Exhale
-        if position >= 0:
-            direction = -1
-        else:
-            direction = 0
-
-    move_linear_actuator(direction)
-    position += direction
-    return position, direction, (UserState.INHALE if is_inhaling else UserState.EXHALE)
-
 def guide_breathing_logic(machine_breath, target_breath, position):
+    # 純時間控制，強制引導
     direction = 0
     half_cycle = target_breath / 2.0
     
-    if machine_breath < half_cycle: # Inhale phase
+    if machine_breath < half_cycle: # 吸氣階段
         if position <= linear_actuator_max_distance:
             direction = 1
         else:
             direction = 0
         machine_breath += sampling_rate
     
-    elif machine_breath >= half_cycle and machine_breath < target_breath: # Exhale phase
+    elif machine_breath >= half_cycle and machine_breath < target_breath: # 吐氣階段
         if position >= 0:
             direction = -1
         else:
@@ -139,7 +109,7 @@ def guide_breathing_logic(machine_breath, target_breath, position):
         machine_breath += sampling_rate
 
     if machine_breath >= target_breath:
-        machine_breath = 0 # Reset cycle
+        machine_breath = 0 # 重置週期
 
     move_linear_actuator(direction)
     position += direction
@@ -147,7 +117,7 @@ def guide_breathing_logic(machine_breath, target_breath, position):
     return machine_breath, position
 
 def main():
-    print("Program Starting...")
+    print("程式啟動中...")
     GPIO.setmode(GPIO.BCM)
     GPIO.setup(in1, GPIO.OUT)
     GPIO.setup(in2, GPIO.OUT)
@@ -161,94 +131,101 @@ def main():
     bmp280 = BMP280(i2c_dev=bus)
     bmp280.setup(mode="forced")
 
-    # Removed Vibration Setup
-
-    rt_filter = RealTimeFilter(lowpass_order, lowpass_cutoff, lowpass_fs)
+    # 1. 濾波器初始化
+    first_read = bmp280.get_pressure()
+    rt_filter = RealTimeFilter(lowpass_order, lowpass_cutoff, lowpass_fs, initial_value=first_read)
 
     # State Variables
-    machine_state = MachineState.MIRROR 
-    print(">>> Phase: MIRROR Started (60 seconds)") # Explicit Print
+    machine_state = MachineState.WARMUP 
+    print(f">>> 系統暖機中 ({warmup_duration}秒)...")
 
     user_state = UserState.EXHALE
-    
-    # Use Wall-Clock Time for Phase Tracking
-    phase_start_time = time.time()
+    program_start_time = time.time()
     
     # Data Collection
     detected_breath_times = []
     current_breath_duration = 0
-    
+    skip_first_breath = True # 依然跳過第一筆暖機後的資料
+
     # Actuator State
     la_position = 0
-    la_direction = 0
     
     # Guide State
-    target_breath_time = 3.0
+    # 因為沒有 Mirror 測量，我們先設定一個預設值，例如 3.0 秒 (一般人的放鬆呼吸)
+    target_breath_time = 3.0 
     machine_breath_timer = 0
     
-    # Prime the filter
-    first_read = bmp280.get_pressure()
     prev_filtered_pressure = rt_filter.process(first_read)
 
     try:
         while True:
             loop_start = time.time()
+            timestamp = time.strftime("%H:%M:%S", time.localtime())
             
-            # 1. Sensing & Filtering
+            # 1. Sensing
             raw_pressure = bmp280.get_pressure()
             curr_filtered_pressure = rt_filter.process(raw_pressure)
             
-            # 2. Detect User Breath Phase
+            # 2. Detect User Breath Phase (背景偵測，用於評估是否有跟上)
             user_action = None
             if curr_filtered_pressure > prev_filtered_pressure:
                 user_action = UserState.INHALE
             elif curr_filtered_pressure < prev_filtered_pressure:
                 user_action = UserState.EXHALE
             
-            if user_state == UserState.EXHALE and user_action == UserState.INHALE:
-                if current_breath_duration > 0.5:
-                    detected_breath_times.append(current_breath_duration)
-                    # print(f"Breath Detected: {current_breath_duration:.2f}s") # Optional
-                current_breath_duration = 0
-                user_state = UserState.INHALE
-            elif user_state == UserState.INHALE and user_action == UserState.EXHALE:
-                user_state = UserState.EXHALE
-            
-            # Note: current_breath_duration still relies on sampling_rate steps, 
-            # which is fine for relative measurement if loop isn't too slow.
-            current_breath_duration += sampling_rate
-
-            # 3. State Machine Logic
-            if machine_state == MachineState.MIRROR:
-                la_position, la_direction, _ = mirror_breathing_logic(
-                    curr_filtered_pressure, prev_filtered_pressure, 
-                    la_position, la_direction
-                )
+            # --- WARMUP PHASE ---
+            if machine_state == MachineState.WARMUP:
+                move_linear_actuator(0) # 停止
                 
-                # Check for Phase Transition using WALL CLOCK TIME
-                if time.time() - phase_start_time >= 5.0:
-                    print("\n" + "="*30)
-                    print(">>> TIMEOUT: Switching to GUIDE Phase")
-                    print("="*30 + "\n")
-                    
-                    target_breath_time = init_guide_phase(detected_breath_times)
-                    machine_state = MachineState.GUIDE
-                    detected_breath_times = [] 
+                # 同步 user_state
+                if user_action is not None:
+                    user_state = user_action
 
+                if time.time() - program_start_time >= warmup_duration:
+                    print("\n" + "="*40)
+                    print(">>> 暖機完成！直接進入 GUIDE (引導) 階段")
+                    print(f">>> 初始目標呼吸時間: {target_breath_time} 秒")
+                    print("="*40 + "\n")
+                    
+                    machine_state = MachineState.GUIDE
+                    current_breath_duration = 0
+                    skip_first_breath = True
+                    detected_breath_times = []
+
+            # --- GUIDE PHASE (Direct Entry) ---
             elif machine_state == MachineState.GUIDE:
+                # A. 馬達邏輯：強制引導 (Pacing)
                 machine_breath_timer, la_position = guide_breathing_logic(
                     machine_breath_timer, target_breath_time, la_position
                 )
                 
+                # B. 使用者偵測邏輯：檢查 Compliance (背景執行)
+                if user_state == UserState.EXHALE and user_action == UserState.INHALE:
+                    if current_breath_duration > 0.5:
+                        if skip_first_breath:
+                            print(f"(忽略初始不完整呼吸: {current_breath_duration:.2f}s)")
+                            skip_first_breath = False
+                        else:
+                            detected_breath_times.append(current_breath_duration)
+                            # print(f"偵測到使用者呼吸: {current_breath_duration:.2f}s") # Optional Debug
+                    
+                    current_breath_duration = 0
+                    user_state = UserState.INHALE
+                elif user_state == UserState.INHALE and user_action == UserState.EXHALE:
+                    user_state = UserState.EXHALE
+                
+                current_breath_duration += sampling_rate
+
+                # C. 評估邏輯：是否跟上？
                 if len(detected_breath_times) >= sampling_window:
                     eval_state, new_target = validate_stable(detected_breath_times, target_breath_time)
                     
                     if eval_state == EvalState.SUCCESS:
-                        print(f"Evaluation: SUCCESS! Slowing down to {new_target:.2f}s")
+                        print(f"[{timestamp}] 評估: 成功跟隨! 放慢引導速度至: {new_target:.2f}s")
                         target_breath_time = new_target
                         detected_breath_times = []
                     elif eval_state == EvalState.FAIL:
-                        print(f"Evaluation: FAIL. Adjusting back to {new_target:.2f}s")
+                        print(f"[{timestamp}] 評估: 跟隨失敗/不穩. 調整回使用者速度: {new_target:.2f}s")
                         target_breath_time = new_target
                         detected_breath_times = []
                     else:
@@ -256,14 +233,14 @@ def main():
 
             prev_filtered_pressure = curr_filtered_pressure
             
-            # 4. Loop Timing Control (Dynamic Compensation)
+            # Timing
             elapsed = time.time() - loop_start
             sleep_time = sampling_rate - elapsed
             if sleep_time > 0:
                 time.sleep(sleep_time)
 
     except KeyboardInterrupt:
-        print("\nKeyboard Interrupt")
+        print("\n程式結束")
         GPIO.cleanup()
         sys.exit(0)
 

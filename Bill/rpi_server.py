@@ -18,10 +18,10 @@ def handle_command(cmd: str):
 
     if cmd == "ACTIVATE":
         if breathm_process is None or breathm_process.poll() is not None:
-            breathm_process = subprocess.Popen(["python3", "fix_version.py"])
+            breathm_process = subprocess.Popen(["python3", "demo_version.py"])
             return "OK: ACTIVATE\n"
         else:
-            return "INFO: final_version.py already running\n"
+            return "INFO: demo_version.py already running\n"
 
     elif cmd == "DEACTIVATE":
         if breathm_process is not None and breathm_process.poll() is None:
@@ -29,7 +29,7 @@ def handle_command(cmd: str):
             breathm_process = None
             return "OK: DEACTIVATE\n"
         else:
-            return "INFO: final_version.py is NOT running\n"
+            return "INFO: demo_version.py is NOT running\n"
     else:
         return "ERROR: UNKNOWN_COMMAND\n"
 
