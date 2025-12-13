@@ -52,7 +52,7 @@ in1 = 23
 in2 = 24
 en = 25
 
-# --- Parameters (完全保持你原本的設定) ---
+# --- Parameters ---
 sampling_rate = 1.0 / 60.0  
 lowpass_fs = 60.0           
 lowpass_cutoff = 2.0        
@@ -263,11 +263,12 @@ def main():
     t.daemon = True
     t.start()
 
+    # --- 繪圖設定 (使用你最喜歡的那版邏輯) ---
     fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True)
     
     ax1.set_title("Real-time Breathing Pressure")
     ax1.set_ylabel("Pressure (hPa)")
-    # [關鍵設定] 禁用偏移，顯示真實數值
+    # 移除 offset 顯示 (避免看到 +1.013e3)
     ax1.get_yaxis().get_major_formatter().set_useOffset(False)
     line_p, = ax1.plot([], [], 'b-', lw=2)
     
@@ -296,13 +297,13 @@ def main():
             if curr_t > 10:
                 ax1.set_xlim(curr_t - 10, curr_t)
             
-            # [標準自適應邏輯]
+            # [這就是你要的邏輯]
             if p_data:
                 curr_min = min(p_data)
                 curr_max = max(p_data)
                 amplitude = curr_max - curr_min
                 
-                # 這裡改回 0.2，避免過度敏感
+                # 門檻設回 0.2 (標準設定)
                 min_display_range = 0.2 
                 
                 if amplitude < min_display_range:
@@ -310,6 +311,7 @@ def main():
                     display_min = center - (min_display_range / 2.0)
                     display_max = center + (min_display_range / 2.0)
                 else:
+                    # 緊貼波形 (只留 5% 邊距) -> 這會讓波形看起來很明顯，不會被壓扁
                     padding = amplitude * 0.05
                     display_min = curr_min - padding
                     display_max = curr_max + padding
