@@ -1,21 +1,34 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 
 import sys
 import time
+import threading
+import collections
 from enum import Enum
-import RPi.GPIO as GPIO
-from bmp280 import BMP280
 import numpy as np
 from scipy.signal import butter, lfilter, lfilter_zi
 
+# --- Matplotlib 設定 (必須在 import pyplot 之前) ---
+import matplotlib
+# 強制使用 TkAgg 後端，這對 Mac XQuartz 相容性最好
+matplotlib.use('TkAgg') 
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
+
+# --- GPIO & Sensor Imports ---
 try:
+    import RPi.GPIO as GPIO
+    from bmp280 import BMP280
     from smbus2 import SMBus
 except ImportError:
-    from smbus import SMBus
+    from smbus import SMBus 
+    print("Warning: SMBus or BMP280 library mismatch.")
 
+# --- 狀態定義 ---
 class MachineState(Enum):
     WARMUP = -1
-    GUIDE = 1 # 只剩 Guide 階段
+    GUIDE = 1 # 根據你的 demo_version，只剩 Guide
 
 class UserState(Enum):
     INHALE = 0
@@ -25,6 +38,16 @@ class EvalState(Enum):
     NONE = 0
     FAIL = 1
     SUCCESS = 2
+
+# --- Global Shared Data & Lock ---
+MAX_POINTS = 600
+# 加入 Lock 防止讀寫衝突 (Thread Safety)
+data_lock = threading.Lock()
+
+pressure_data = collections.deque(maxlen=MAX_POINTS)
+position_data = collections.deque(maxlen=MAX_POINTS)
+time_data = collections.deque(maxlen=MAX_POINTS)
+running = True 
 
 # --- Pin Definition ---
 in1 = 23
@@ -37,15 +60,14 @@ lowpass_fs = 60.0
 lowpass_cutoff = 2.0        
 lowpass_order = 4           
 
-# Other parameters
 sampling_window = 4
 increase_breath_time = 0.5
 linear_actuator_max_distance = 50
 success_threshold = 15
 fail_threshold = 50
-warmup_duration = 5.0 # 暖機 5 秒
+warmup_duration = 5.0
 
-# --- Real-time Filter Class ---
+# --- Filter Class ---
 class RealTimeFilter:
     def __init__(self, order, cutoff, fs, initial_value=0.0):
         nyquist = 0.5 * fs
@@ -58,13 +80,12 @@ class RealTimeFilter:
         return filtered_value[0]
 
 # --- Helper Functions ---
-
 def validate_stable(breath_times, target_breath_time):
     if len(breath_times) < sampling_window:
         return EvalState.NONE, target_breath_time
 
-    recent_breaths = np.array(breath_times[-sampling_window:])
-    deviations = ((recent_breaths - target_breath_time) / target_breath_time) * 100
+    recent = np.array(breath_times[-sampling_window:])
+    deviations = ((recent - target_breath_time) / target_breath_time) * 100
     
     next_target = target_breath_time
     state = EvalState.NONE
@@ -74,141 +95,135 @@ def validate_stable(breath_times, target_breath_time):
         next_target = target_breath_time + increase_breath_time
     elif np.any(np.abs(deviations) > fail_threshold):
         state = EvalState.FAIL
-        next_target = np.mean(recent_breaths) 
+        next_target = np.mean(recent) 
         
     return state, next_target
 
 def move_linear_actuator(direction):
-    if direction == 1:
-        GPIO.output(in1, GPIO.HIGH)
-        GPIO.output(in2, GPIO.LOW)
-    elif direction == -1:
-        GPIO.output(in1, GPIO.LOW)
-        GPIO.output(in2, GPIO.HIGH)
-    else:
-        GPIO.output(in1, GPIO.LOW)
-        GPIO.output(in2, GPIO.LOW)
-
-def guide_breathing_logic(machine_breath, target_breath, position):
-    # 純時間控制，強制引導
-    direction = 0
-    half_cycle = target_breath / 2.0
-    
-    if machine_breath < half_cycle: # 吸氣階段
-        if position <= linear_actuator_max_distance:
-            direction = 1
+    if not running: return
+    try:
+        if direction == 1:
+            GPIO.output(in1, GPIO.HIGH)
+            GPIO.output(in2, GPIO.LOW)
+        elif direction == -1:
+            GPIO.output(in1, GPIO.LOW)
+            GPIO.output(in2, GPIO.HIGH)
         else:
-            direction = 0
-        machine_breath += sampling_rate
+            GPIO.output(in1, GPIO.LOW)
+            GPIO.output(in2, GPIO.LOW)
+    except Exception:
+        pass
+
+def guide_breathing_logic(timer, target, pos):
+    direct = 0
+    half = target / 2.0
     
-    elif machine_breath >= half_cycle and machine_breath < target_breath: # 吐氣階段
-        if position >= 0:
-            direction = -1
-        else:
-            direction = 0
-        machine_breath += sampling_rate
+    if timer < half:
+        if pos <= linear_actuator_max_distance: direct = 1
+        else: direct = 0
+        timer += sampling_rate
+    elif timer >= half and timer < target:
+        if pos >= 0: direct = -1
+        else: direct = 0
+        timer += sampling_rate
+    
+    if timer >= target: timer = 0
 
-    if machine_breath >= target_breath:
-        machine_breath = 0 # 重置週期
+    move_linear_actuator(direct)
+    pos += direct
+    return timer, pos
 
-    move_linear_actuator(direction)
-    position += direction
-
-    return machine_breath, position
-
-def main():
-    print("程式啟動中...")
+def control_loop():
+    global running
+    print(">>> 背景控制執行緒啟動...")
+    
+    # GPIO Setup
     GPIO.setmode(GPIO.BCM)
     GPIO.setup(in1, GPIO.OUT)
     GPIO.setup(in2, GPIO.OUT)
     GPIO.setup(en, GPIO.OUT)
     GPIO.output(in1, GPIO.LOW)
     GPIO.output(in2, GPIO.LOW)
+    
     p = GPIO.PWM(en, 800)
     p.start(100)
     
-    bus = SMBus(1)
-    bmp280 = BMP280(i2c_dev=bus)
-    bmp280.setup(mode="forced")
+    # Sensor Setup
+    try:
+        bus = SMBus(1)
+        bmp280 = BMP280(i2c_dev=bus)
+        bmp280.setup(mode="forced")
+        first_read = bmp280.get_pressure()
+    except Exception as e:
+        print(f"Sensor Error: {e}")
+        running = False
+        return
 
-    # 1. 濾波器初始化
-    first_read = bmp280.get_pressure()
     rt_filter = RealTimeFilter(lowpass_order, lowpass_cutoff, lowpass_fs, initial_value=first_read)
 
-    # State Variables
-    machine_state = MachineState.WARMUP 
-    print(f">>> 系統暖機中 ({warmup_duration}秒)...")
-
+    # Variables (Matching demo_version.py logic)
+    machine_state = MachineState.WARMUP
     user_state = UserState.EXHALE
+    
     program_start_time = time.time()
     
-    # Data Collection
     detected_breath_times = []
     current_breath_duration = 0
-    skip_first_breath = True # 依然跳過第一筆暖機後的資料
+    skip_first_breath = True
 
-    # Actuator State
     la_position = 0
-    
-    # Guide State
-    # 因為沒有 Mirror 測量，我們先設定一個預設值，例如 3.0 秒 (一般人的放鬆呼吸)
-    target_breath_time = 3.0 
+    target_breath_time = 3.0
     machine_breath_timer = 0
     
-    prev_filtered_pressure = rt_filter.process(first_read)
+    prev_filtered = rt_filter.process(first_read)
+
+    print(f">>> 系統暖機中 ({warmup_duration}秒)...")
 
     try:
-        while True:
+        while running:
             loop_start = time.time()
-            timestamp = time.strftime("%H:%M:%S", time.localtime())
+            ts = time.strftime("%H:%M:%S", time.localtime())
             
             # 1. Sensing
-            raw_pressure = bmp280.get_pressure()
-            curr_filtered_pressure = rt_filter.process(raw_pressure)
+            raw = bmp280.get_pressure()
+            curr_filtered = rt_filter.process(raw)
             
-            # 2. Detect User Breath Phase (背景偵測，用於評估是否有跟上)
+            # 2. Detect User Breath Phase (背景偵測)
             user_action = None
-            if curr_filtered_pressure > prev_filtered_pressure:
+            if curr_filtered > prev_filtered:
                 user_action = UserState.INHALE
-            elif curr_filtered_pressure < prev_filtered_pressure:
+            elif curr_filtered < prev_filtered:
                 user_action = UserState.EXHALE
-            
-            # --- WARMUP PHASE ---
+
+            # --- WARMUP ---
             if machine_state == MachineState.WARMUP:
-                move_linear_actuator(0) # 停止
-                
-                # 同步 user_state
+                move_linear_actuator(0)
                 if user_action is not None:
                     user_state = user_action
 
                 if time.time() - program_start_time >= warmup_duration:
-                    print("\n" + "="*40)
-                    print(">>> 暖機完成！直接進入 GUIDE (引導) 階段")
-                    print(f">>> 初始目標呼吸時間: {target_breath_time} 秒")
-                    print("="*40 + "\n")
-                    
+                    print(f"\n[{ts}] 暖機完成 -> GUIDE 模式 (Target: {target_breath_time}s)")
                     machine_state = MachineState.GUIDE
                     current_breath_duration = 0
                     skip_first_breath = True
                     detected_breath_times = []
 
-            # --- GUIDE PHASE (Direct Entry) ---
+            # --- GUIDE (Direct Entry) ---
             elif machine_state == MachineState.GUIDE:
-                # A. 馬達邏輯：強制引導 (Pacing)
+                # A. 馬達邏輯
                 machine_breath_timer, la_position = guide_breathing_logic(
                     machine_breath_timer, target_breath_time, la_position
                 )
                 
-                # B. 使用者偵測邏輯：檢查 Compliance (背景執行)
+                # B. 使用者偵測邏輯
                 if user_state == UserState.EXHALE and user_action == UserState.INHALE:
                     if current_breath_duration > 0.5:
                         if skip_first_breath:
-                            print(f"(忽略初始不完整呼吸: {current_breath_duration:.2f}s)")
+                            print(f"   (忽略暖機切換呼吸: {current_breath_duration:.2f}s)")
                             skip_first_breath = False
                         else:
                             detected_breath_times.append(current_breath_duration)
-                            # print(f"偵測到使用者呼吸: {current_breath_duration:.2f}s") # Optional Debug
-                    
+                            # print(f"   >> 偵測呼吸: {current_breath_duration:.2f}s")
                     current_breath_duration = 0
                     user_state = UserState.INHALE
                 elif user_state == UserState.INHALE and user_action == UserState.EXHALE:
@@ -216,33 +231,119 @@ def main():
                 
                 current_breath_duration += sampling_rate
 
-                # C. 評估邏輯：是否跟上？
+                # C. 評估邏輯
                 if len(detected_breath_times) >= sampling_window:
-                    eval_state, new_target = validate_stable(detected_breath_times, target_breath_time)
-                    
-                    if eval_state == EvalState.SUCCESS:
-                        print(f"[{timestamp}] 評估: 成功跟隨! 放慢引導速度至: {new_target:.2f}s")
+                    eval_st, new_target = validate_stable(detected_breath_times, target_breath_time)
+                    if eval_st == EvalState.SUCCESS:
+                        print(f"[{ts}] 評估: 成功! 放慢至: {new_target:.2f}s")
                         target_breath_time = new_target
                         detected_breath_times = []
-                    elif eval_state == EvalState.FAIL:
-                        print(f"[{timestamp}] 評估: 跟隨失敗/不穩. 調整回使用者速度: {new_target:.2f}s")
+                    elif eval_st == EvalState.FAIL:
+                        print(f"[{ts}] 評估: 失敗/不穩. 調整回: {new_target:.2f}s")
                         target_breath_time = new_target
                         detected_breath_times = []
                     else:
                         detected_breath_times.pop(0)
 
-            prev_filtered_pressure = curr_filtered_pressure
-            
-            # Timing
+            prev_filtered = curr_filtered
+
+            # --- Store Data (Thread Safe) ---
+            with data_lock:
+                pressure_data.append(curr_filtered)
+                position_data.append(la_position)
+                time_data.append(time.time() - program_start_time)
+
             elapsed = time.time() - loop_start
             sleep_time = sampling_rate - elapsed
             if sleep_time > 0:
                 time.sleep(sleep_time)
 
+    except Exception as e:
+        print(f"\nControl Loop Error: {e}")
+    
+    finally:
+        print("清理 GPIO 資源...")
+        try: p.stop()
+        except: pass
+        try: GPIO.cleanup()
+        except: pass
+        running = False
+
+def main():
+    global running
+    print("程式啟動中... (Mac XQuartz Mode)")
+
+    # 啟動控制執行緒
+    t = threading.Thread(target=control_loop)
+    t.daemon = True
+    t.start()
+
+    # 繪圖設定 (Adaptive Y-Axis Version)
+    fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True)
+    
+    ax1.set_title("Real-time Breathing Pressure")
+    ax1.set_ylabel("Pressure (hPa)")
+    ax1.get_yaxis().get_major_formatter().set_useOffset(False) # 禁用科學記號
+    line_p, = ax1.plot([], [], 'b-', lw=2)
+    
+    ax2.set_ylabel("Motor Pos")
+    ax2.set_xlabel("Time (s)")
+    line_m, = ax2.plot([], [], 'r-', lw=2)
+    
+    ax1.set_xlim(0, 10)
+    ax2.set_ylim(-5, 60) # 馬達視覺留白
+
+    def update(frame):
+        if not running:
+            plt.close(fig)
+            return line_p, line_m
+
+        with data_lock:
+            t_data = list(time_data)
+            p_data = list(pressure_data)
+            m_data = list(position_data)
+
+        if t_data:
+            line_p.set_data(t_data, p_data)
+            line_m.set_data(t_data, m_data)
+            
+            # X軸捲動
+            curr_t = t_data[-1]
+            if curr_t > 10:
+                ax1.set_xlim(curr_t - 10, curr_t)
+            
+            # [Adaptive Y-Axis Logic]
+            if p_data:
+                curr_min = min(p_data)
+                curr_max = max(p_data)
+                amplitude = curr_max - curr_min
+                min_display_range = 0.2 
+                
+                if amplitude < min_display_range:
+                    center = (curr_max + curr_min) / 2.0
+                    display_min = center - (min_display_range / 2.0)
+                    display_max = center + (min_display_range / 2.0)
+                else:
+                    padding = amplitude * 0.05
+                    display_min = curr_min - padding
+                    display_max = curr_max + padding
+                
+                ax1.set_ylim(display_min, display_max)
+
+        return line_p, line_m
+
+    ani = animation.FuncAnimation(
+        fig, update, interval=50, blit=False, cache_frame_data=False
+    )
+    
+    try:
+        plt.show()
     except KeyboardInterrupt:
-        print("\n程式結束")
-        GPIO.cleanup()
-        sys.exit(0)
+        pass
+    
+    print("主視窗關閉，程式結束。")
+    running = False
+    t.join(timeout=1.0)
 
 if __name__ == "__main__":
     main()
