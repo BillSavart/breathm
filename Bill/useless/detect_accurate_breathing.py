@@ -330,7 +330,7 @@ def control_loop():
 
 def main():
     global running
-    print("程式啟動中... (SSH X11 Forwarding Mode)")
+    print("程式啟動中... (Mac XQuartz Mode)")
 
     # 啟動控制執行緒
     t = threading.Thread(target=control_loop)
@@ -339,25 +339,28 @@ def main():
 
     # 繪圖設定
     fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True)
-    ax1.set_title("Real-time Pressure")
-    ax1.set_ylabel("hPa")
-    line_p, = ax1.plot([], [], 'b-', lw=1)
+    
+    # [優化 1] 設定標題與 Y 軸格式，取消科學記號顯示 (避免看到 +1.013e3 這種東西)
+    ax1.set_title("Real-time Breathing Pressure")
+    ax1.set_ylabel("Pressure (hPa)")
+    ax1.get_yaxis().get_major_formatter().set_useOffset(False) # 禁用偏移顯示
+    
+    line_p, = ax1.plot([], [], 'b-', lw=2) # lw=2 加粗線條讓波形更明顯
     
     ax2.set_ylabel("Motor Pos")
     ax2.set_xlabel("Time (s)")
-    line_m, = ax2.plot([], [], 'r-', lw=1)
+    line_m, = ax2.plot([], [], 'r-', lw=2)
     
-    # 讓時間軸稍微寬鬆一點
+    # 初始設定
     ax1.set_xlim(0, 10)
-    ax2.set_ylim(-5, 60)
+    # 這裡依照你的解釋，保留 Motor 的視覺留白
+    ax2.set_ylim(-5, 60) 
 
     def update(frame):
-        # 檢查若背景執行緒死了，主程式也該結束
         if not running:
             plt.close(fig)
             return line_p, line_m
 
-        # [關鍵修正] 使用 Lock 複製數據，避免 RuntimeError
         with data_lock:
             t_data = list(time_data)
             p_data = list(pressure_data)
@@ -367,27 +370,45 @@ def main():
             line_p.set_data(t_data, p_data)
             line_m.set_data(t_data, m_data)
             
-            # X軸捲動
+            # X軸捲動邏輯 (保持原本)
             curr_t = t_data[-1]
             if curr_t > 10:
                 ax1.set_xlim(curr_t - 10, curr_t)
             
-            # Y軸自動縮放
+            # [優化 2] 超級 Adaptive 的 Y 軸縮放邏輯
             if p_data:
-                min_p, max_p = min(p_data), max(p_data)
-                rng = max_p - min_p
-                if rng < 0.1: rng = 0.1
-                ax1.set_ylim(min_p - rng*0.5, max_p + rng*0.5)
+                # 只看「目前視窗內」的數據來決定縮放 (取最後 10 秒左右的數據點)
+                # 假設 sampling_rate 約 60Hz，10秒約 600點 (也就是 deque 的長度)
+                curr_min = min(p_data)
+                curr_max = max(p_data)
+                
+                # 計算波動範圍
+                amplitude = curr_max - curr_min
+                
+                # 設定一個「最小顯示範圍」防止放大雜訊
+                # 如果波動小於 0.2 hPa，我們就強制顯示 0.2 的範圍，避免線條亂抖
+                min_display_range = 0.2 
+                
+                if amplitude < min_display_range:
+                    center = (curr_max + curr_min) / 2.0
+                    display_min = center - (min_display_range / 2.0)
+                    display_max = center + (min_display_range / 2.0)
+                else:
+                    # 如果波動夠大，就緊貼數據，只留上下 5% 的空間
+                    padding = amplitude * 0.05
+                    display_min = curr_min - padding
+                    display_max = curr_max + padding
+                
+                ax1.set_ylim(display_min, display_max)
 
         return line_p, line_m
 
-    # [關鍵修正] cache_frame_data=False 避免記憶體警告
     ani = animation.FuncAnimation(
         fig, update, interval=50, blit=False, cache_frame_data=False
     )
     
     try:
-        plt.show() # 如果沒有設定 X11，這裡會直接結束
+        plt.show()
     except KeyboardInterrupt:
         pass
     
