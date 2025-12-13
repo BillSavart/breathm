@@ -9,9 +9,8 @@ from enum import Enum
 import numpy as np
 from scipy.signal import butter, lfilter, lfilter_zi
 
-# --- Matplotlib 設定 (必須在 import pyplot 之前) ---
+# --- Matplotlib 設定 ---
 import matplotlib
-# 強制使用 TkAgg 後端，這對 Mac XQuartz 相容性最好
 matplotlib.use('TkAgg') 
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
@@ -28,7 +27,7 @@ except ImportError:
 # --- 狀態定義 ---
 class MachineState(Enum):
     WARMUP = -1
-    GUIDE = 1 # 根據你的 demo_version，只剩 Guide
+    GUIDE = 1 
 
 class UserState(Enum):
     INHALE = 0
@@ -41,7 +40,6 @@ class EvalState(Enum):
 
 # --- Global Shared Data & Lock ---
 MAX_POINTS = 600
-# 加入 Lock 防止讀寫衝突 (Thread Safety)
 data_lock = threading.Lock()
 
 pressure_data = collections.deque(maxlen=MAX_POINTS)
@@ -54,7 +52,7 @@ in1 = 23
 in2 = 24
 en = 25
 
-# --- Parameters ---
+# --- Parameters (完全保持你原本的設定) ---
 sampling_rate = 1.0 / 60.0  
 lowpass_fs = 60.0           
 lowpass_cutoff = 2.0        
@@ -137,7 +135,6 @@ def control_loop():
     global running
     print(">>> 背景控制執行緒啟動...")
     
-    # GPIO Setup
     GPIO.setmode(GPIO.BCM)
     GPIO.setup(in1, GPIO.OUT)
     GPIO.setup(in2, GPIO.OUT)
@@ -148,7 +145,6 @@ def control_loop():
     p = GPIO.PWM(en, 800)
     p.start(100)
     
-    # Sensor Setup
     try:
         bus = SMBus(1)
         bmp280 = BMP280(i2c_dev=bus)
@@ -161,7 +157,6 @@ def control_loop():
 
     rt_filter = RealTimeFilter(lowpass_order, lowpass_cutoff, lowpass_fs, initial_value=first_read)
 
-    # Variables (Matching demo_version.py logic)
     machine_state = MachineState.WARMUP
     user_state = UserState.EXHALE
     
@@ -184,46 +179,39 @@ def control_loop():
             loop_start = time.time()
             ts = time.strftime("%H:%M:%S", time.localtime())
             
-            # 1. Sensing
             raw = bmp280.get_pressure()
             curr_filtered = rt_filter.process(raw)
             
-            # 2. Detect User Breath Phase (背景偵測)
             user_action = None
             if curr_filtered > prev_filtered:
                 user_action = UserState.INHALE
             elif curr_filtered < prev_filtered:
                 user_action = UserState.EXHALE
 
-            # --- WARMUP ---
             if machine_state == MachineState.WARMUP:
                 move_linear_actuator(0)
                 if user_action is not None:
                     user_state = user_action
 
                 if time.time() - program_start_time >= warmup_duration:
-                    print(f"\n[{ts}] 暖機完成 -> GUIDE 模式 (Target: {target_breath_time}s)")
+                    print(f"\n[{ts}] 暖機完成 -> GUIDE 模式")
                     machine_state = MachineState.GUIDE
                     current_breath_duration = 0
                     skip_first_breath = True
                     detected_breath_times = []
 
-            # --- GUIDE (Direct Entry) ---
             elif machine_state == MachineState.GUIDE:
-                # A. 馬達邏輯
                 machine_breath_timer, la_position = guide_breathing_logic(
                     machine_breath_timer, target_breath_time, la_position
                 )
                 
-                # B. 使用者偵測邏輯
                 if user_state == UserState.EXHALE and user_action == UserState.INHALE:
                     if current_breath_duration > 0.5:
                         if skip_first_breath:
-                            print(f"   (忽略暖機切換呼吸: {current_breath_duration:.2f}s)")
+                            print(f"   (忽略暖機切換: {current_breath_duration:.2f}s)")
                             skip_first_breath = False
                         else:
                             detected_breath_times.append(current_breath_duration)
-                            # print(f"   >> 偵測呼吸: {current_breath_duration:.2f}s")
                     current_breath_duration = 0
                     user_state = UserState.INHALE
                 elif user_state == UserState.INHALE and user_action == UserState.EXHALE:
@@ -231,15 +219,14 @@ def control_loop():
                 
                 current_breath_duration += sampling_rate
 
-                # C. 評估邏輯
                 if len(detected_breath_times) >= sampling_window:
                     eval_st, new_target = validate_stable(detected_breath_times, target_breath_time)
                     if eval_st == EvalState.SUCCESS:
-                        print(f"[{ts}] 評估: 成功! 放慢至: {new_target:.2f}s")
+                        print(f"[{ts}] 評估成功! 新目標: {new_target:.2f}s")
                         target_breath_time = new_target
                         detected_breath_times = []
                     elif eval_st == EvalState.FAIL:
-                        print(f"[{ts}] 評估: 失敗/不穩. 調整回: {new_target:.2f}s")
+                        print(f"[{ts}] 評估失敗. 重置為: {new_target:.2f}s")
                         target_breath_time = new_target
                         detected_breath_times = []
                     else:
@@ -247,7 +234,6 @@ def control_loop():
 
             prev_filtered = curr_filtered
 
-            # --- Store Data (Thread Safe) ---
             with data_lock:
                 pressure_data.append(curr_filtered)
                 position_data.append(la_position)
@@ -262,7 +248,7 @@ def control_loop():
         print(f"\nControl Loop Error: {e}")
     
     finally:
-        print("清理 GPIO 資源...")
+        print("清理 GPIO...")
         try: p.stop()
         except: pass
         try: GPIO.cleanup()
@@ -271,19 +257,18 @@ def control_loop():
 
 def main():
     global running
-    print("程式啟動中... (Mac XQuartz Mode)")
+    print("程式啟動中... (SSH X11 Mode)")
 
-    # 啟動控制執行緒
     t = threading.Thread(target=control_loop)
     t.daemon = True
     t.start()
 
-    # 繪圖設定 (Adaptive Y-Axis Version)
     fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True)
     
     ax1.set_title("Real-time Breathing Pressure")
     ax1.set_ylabel("Pressure (hPa)")
-    ax1.get_yaxis().get_major_formatter().set_useOffset(False) # 禁用科學記號
+    # [關鍵設定] 禁用偏移，顯示真實數值
+    ax1.get_yaxis().get_major_formatter().set_useOffset(False)
     line_p, = ax1.plot([], [], 'b-', lw=2)
     
     ax2.set_ylabel("Motor Pos")
@@ -291,7 +276,7 @@ def main():
     line_m, = ax2.plot([], [], 'r-', lw=2)
     
     ax1.set_xlim(0, 10)
-    ax2.set_ylim(-5, 60) # 馬達視覺留白
+    ax2.set_ylim(-5, 60)
 
     def update(frame):
         if not running:
@@ -307,16 +292,17 @@ def main():
             line_p.set_data(t_data, p_data)
             line_m.set_data(t_data, m_data)
             
-            # X軸捲動
             curr_t = t_data[-1]
             if curr_t > 10:
                 ax1.set_xlim(curr_t - 10, curr_t)
             
-            # [Adaptive Y-Axis Logic]
+            # [標準自適應邏輯]
             if p_data:
                 curr_min = min(p_data)
                 curr_max = max(p_data)
                 amplitude = curr_max - curr_min
+                
+                # 這裡改回 0.2，避免過度敏感
                 min_display_range = 0.2 
                 
                 if amplitude < min_display_range:
@@ -341,7 +327,7 @@ def main():
     except KeyboardInterrupt:
         pass
     
-    print("主視窗關閉，程式結束。")
+    print("程式結束。")
     running = False
     t.join(timeout=1.0)
 
