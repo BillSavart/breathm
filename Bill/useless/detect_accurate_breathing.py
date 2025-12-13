@@ -7,6 +7,10 @@ import RPi.GPIO as GPIO
 from bmp280 import BMP280
 import numpy as np
 from scipy.signal import butter, lfilter, lfilter_zi
+import threading
+import collections
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
 
 try:
     from smbus2 import SMBus
@@ -26,6 +30,13 @@ class EvalState(Enum):
     NONE = 0
     FAIL = 1
     SUCCESS = 2
+
+# --- Global Shared Data for Plotting ---
+MAX_POINTS = 600 # 10 seconds @ 60Hz
+pressure_data = collections.deque(maxlen=MAX_POINTS)
+position_data = collections.deque(maxlen=MAX_POINTS)
+time_data = collections.deque(maxlen=MAX_POINTS)
+running = True # Global control flag
 
 # --- Pin Definition ---
 in1 = 23
@@ -143,7 +154,8 @@ def guide_breathing_logic(machine_breath, target_breath, position):
     position += direction
     return machine_breath, position
 
-def main():
+def control_loop():
+    global running
     print("程式啟動中...")
     GPIO.setmode(GPIO.BCM)
     GPIO.setup(in1, GPIO.OUT)
@@ -189,8 +201,10 @@ def main():
     
     prev_filtered_pressure = rt_filter.process(first_read)
 
+    prev_filtered_pressure = rt_filter.process(first_read)
+
     try:
-        while True:
+        while running:
             loop_start = time.time()
             timestamp = time.strftime("%H:%M:%S", time.localtime())
             
@@ -314,6 +328,12 @@ def main():
                         detected_breath_times.pop(0)
 
             prev_filtered_pressure = curr_filtered_pressure
+
+            # --- Data for Plotting ---
+            pressure_data.append(curr_filtered_pressure)
+            position_data.append(la_position)
+            # Use relative time for easier plotting
+            time_data.append(time.time() - program_start_time)
             
             # Timing
             elapsed = time.time() - loop_start
@@ -322,9 +342,83 @@ def main():
                 time.sleep(sleep_time)
 
     except KeyboardInterrupt:
-        print("\n程式結束 (Keyboard Interrupt)")
+        print("\n控制線程結束 (Keyboard Interrupt)")
+    except Exception as e:
+        print(f"\n發生錯誤: {e}")
+    finally:
+        print("清理 GPIO...")
         GPIO.cleanup()
-        sys.exit(0)
+        running = False
+
+def main():
+    global running
+    print("程式啟動中... (主視窗顯示波形，背景執行控制)")
+
+    # Start control thread
+    t = threading.Thread(target=control_loop)
+    t.daemon = True
+    t.start()
+
+    # Setup Plotting
+    fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True)
+    
+    ax1.set_title("Real-time Pressure & Position")
+    ax1.set_ylabel("Pressure (hPa)")
+    line_pressure, = ax1.plot([], [], 'b-', label='Pressure')
+    ax1.legend(loc='upper right')
+    
+    ax2.set_ylabel("Admin Motor Position")
+    ax2.set_xlabel("Time (s)")
+    line_position, = ax2.plot([], [], 'r-', label='Position')
+    ax2.legend(loc='upper right')
+
+    def init():
+        ax1.set_xlim(0, 10)
+        # Assuming pressure range, can auto-scale or set fixed
+        # ax1.set_ylim(950, 1050) 
+        ax2.set_ylim(-5, 60) # Linear actuator max is 50
+        return line_pressure, line_position
+
+    def update(frame):
+        if not running:
+            plt.close(fig)
+            return line_pressure, line_position
+
+        # Copy data to avoid race condition (simple copy is usually enough)
+        t = list(time_data)
+        p = list(pressure_data)
+        pos = list(position_data)
+
+        if t:
+            line_pressure.set_data(t, p)
+            line_position.set_data(t, pos)
+            
+            # Auto-scroll x-axis
+            current_time = t[-1]
+            if current_time > 10:
+                ax1.set_xlim(current_time - 10, current_time)
+            else:
+                ax1.set_xlim(0, 10)
+            
+            # Auto-scale Y for pressure if needed
+            if p:
+                min_p, max_p = min(p), max(p)
+                margin = (max_p - min_p) * 0.1
+                if margin == 0: margin = 1
+                ax1.set_ylim(min_p - margin, max_p + margin)
+
+        return line_pressure, line_position
+
+    ani = animation.FuncAnimation(fig, update, init_func=init, blit=False, interval=50) # 20fps
+    
+    try:
+        plt.show()
+    except KeyboardInterrupt:
+        pass
+    
+    print("主視窗關閉，停止程式...")
+    running = False
+    t.join()
 
 if __name__ == "__main__":
     main()
