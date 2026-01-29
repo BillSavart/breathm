@@ -9,7 +9,7 @@ import numpy as np
 from enum import Enum
 from scipy.signal import butter, lfilter, lfilter_zi
 
-# --- Matplotlib 設定 (關鍵：TkAgg) ---
+# --- Matplotlib (支援 X11) ---
 import matplotlib
 matplotlib.use('TkAgg') 
 import matplotlib.pyplot as plt
@@ -24,7 +24,7 @@ except ImportError:
     from smbus import SMBus 
     print("Warning: Library mismatch (Testing mode).")
 
-# --- 狀態與常數 ---
+# --- 變數與常數 ---
 class UserState(Enum):
     INHALE = 0
     EXHALE = 1
@@ -41,12 +41,7 @@ position_data = collections.deque(maxlen=MAX_POINTS)
 time_data = collections.deque(maxlen=MAX_POINTS)
 running = True 
 
-# Pin Definition
-in1 = 23
-in2 = 24
-en = 25
-
-# Parameters
+in1, in2, en = 23, 24, 25
 sampling_rate = 1.0 / 60.0  
 lowpass_fs = 60.0           
 lowpass_cutoff = 2.0        
@@ -57,7 +52,7 @@ linear_actuator_max_distance = 50
 success_threshold = 15
 fail_threshold = 50
 
-# --- Filter Class ---
+# --- Filter ---
 class RealTimeFilter:
     def __init__(self, order, cutoff, fs, initial_value=0.0):
         nyquist = 0.5 * fs
@@ -71,8 +66,7 @@ class RealTimeFilter:
 
 # --- Helper Functions ---
 def validate_stable(breath_times, target_breath_time):
-    if len(breath_times) < sampling_window:
-        return EvalState.NONE, target_breath_time
+    if len(breath_times) < sampling_window: return EvalState.NONE, target_breath_time
     recent = np.array(breath_times[-sampling_window:])
     deviations = ((recent - target_breath_time) / target_breath_time) * 100
     if np.all(np.abs(deviations) <= success_threshold):
@@ -93,14 +87,12 @@ def move_linear_actuator(direction):
         else:
             GPIO.output(in1, GPIO.LOW)
             GPIO.output(in2, GPIO.LOW)
-    except:
-        pass
+    except: pass
 
 def guide_breathing_logic(timer, target, pos):
     direct = 0
     half = target / 2.0
     action = ""
-    
     if timer < half:
         if pos <= linear_actuator_max_distance: direct = 1
         else: direct = 0
@@ -111,17 +103,14 @@ def guide_breathing_logic(timer, target, pos):
         else: direct = 0
         timer += sampling_rate
         action = "EXHALE"
-    
     if timer >= target: timer = 0
     move_linear_actuator(direct)
     pos += direct
     return timer, pos, action
 
-# --- 控制迴圈 (邏輯核心) ---
+# --- 核心邏輯 Loop ---
 def control_loop(queue):
     global running
-    
-    # GPIO 初始化 (必須在 Process 內做)
     try:
         GPIO.setmode(GPIO.BCM)
         GPIO.setup(in1, GPIO.OUT)
@@ -131,18 +120,14 @@ def control_loop(queue):
         GPIO.output(in2, GPIO.LOW)
         p = GPIO.PWM(en, 800)
         p.start(100)
-    except:
-        print("GPIO Init Failed")
-        return
+    except: return
 
-    # Sensor 初始化
     try:
         bus = SMBus(1)
         bmp280 = BMP280(i2c_dev=bus)
         bmp280.setup(mode="forced")
         first_read = bmp280.get_pressure()
     except:
-        print("Sensor Init Failed")
         running = False
         return
 
@@ -159,13 +144,11 @@ def control_loop(queue):
     prev_filtered = rt_filter.process(first_read)
     last_sent_action = ""
 
-    # 暖機省略，直接開始 Demo
-    print(">>> Demo Chart Logic Started")
+    print(">>> Demo Version Logic Started")
 
     try:
         while running:
             loop_start = time.time()
-            
             raw = bmp280.get_pressure()
             curr_filtered = rt_filter.process(raw)
             
@@ -173,17 +156,14 @@ def control_loop(queue):
             if curr_filtered > prev_filtered: user_action = UserState.INHALE
             elif curr_filtered < prev_filtered: user_action = UserState.EXHALE
 
-            # Guide Logic
             machine_breath_timer, la_position, action = guide_breathing_logic(
                 machine_breath_timer, target_breath_time, la_position
             )
             
-            # [關鍵] 發送訊號給 Server -> Unity
             if action != last_sent_action:
                 queue.put(f"ANIM:{action}\n")
                 last_sent_action = action
 
-            # 使用者評估邏輯
             if user_state == UserState.EXHALE and user_action == UserState.INHALE:
                 if current_breath_duration > 0.5:
                     if skip_first_breath: skip_first_breath = False
@@ -207,8 +187,6 @@ def control_loop(queue):
                     detected_breath_times.pop(0)
 
             prev_filtered = curr_filtered
-
-            # 更新繪圖數據
             with data_lock:
                 pressure_data.append(curr_filtered)
                 position_data.append(la_position)
@@ -218,73 +196,53 @@ def control_loop(queue):
             sleep_time = sampling_rate - elapsed
             if sleep_time > 0: time.sleep(sleep_time)
             
-    except Exception as e:
-        print(f"Logic Error: {e}")
     finally:
         try: p.stop()
         except: pass
         try: GPIO.cleanup()
         except: pass
 
-# --- GUI 主程序 (Process Entry Point) ---
+# --- 新增的 GUI 接口 ---
 def main_gui(queue):
     global running
     running = True
     
-    # 1. 啟動邏輯執行緒
     t = threading.Thread(target=control_loop, args=(queue,), daemon=True)
     t.start()
     
-    # 2. 設定 Matplotlib 圖表
     fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True)
-    ax1.set_title("Demo Mode (Guide Only)")
+    ax1.set_title("Demo Version (Guide Mode)")
     ax1.get_yaxis().get_major_formatter().set_useOffset(False)
     
-    line_p, = ax1.plot([], [], 'b-', lw=2, label='Pressure')
-    line_m, = ax2.plot([], [], 'r-', lw=2, label='Motor')
+    line_p, = ax1.plot([], [], 'b-', lw=2)
+    line_m, = ax2.plot([], [], 'r-', lw=2)
     
     ax1.set_xlim(0, 10)
     ax2.set_ylim(-5, 60)
-    ax2.set_ylabel("Motor Pos")
-    ax2.set_xlabel("Time (s)")
+    ax2.set_ylabel("Pos")
 
     def update(frame):
         if not running:
             plt.close(fig)
             return line_p, line_m
-
         with data_lock:
             t_data = list(time_data)
             p_data = list(pressure_data)
             m_data = list(position_data)
-
         if t_data:
             line_p.set_data(t_data, p_data)
             line_m.set_data(t_data, m_data)
-            
             curr_t = t_data[-1]
-            if curr_t > 10:
-                ax1.set_xlim(curr_t - 10, curr_t)
-            
+            if curr_t > 10: ax1.set_xlim(curr_t - 10, curr_t)
             if p_data:
                 curr_min, curr_max = min(p_data), max(p_data)
-                amp = curr_max - curr_min
-                if amp < 0.2:
-                    mid = (curr_max + curr_min)/2
-                    ax1.set_ylim(mid - 0.1, mid + 0.1)
-                else:
-                    padding = amp * 0.1
-                    ax1.set_ylim(curr_min - padding, curr_max + padding)
-
+                mid = (curr_max + curr_min)/2
+                ax1.set_ylim(mid - 0.2, mid + 0.2)
         return line_p, line_m
 
     ani = animation.FuncAnimation(fig, update, interval=50, blit=False)
-    
-    try:
-        plt.show() # 這裡會 Blocking 直到視窗關閉
-    except KeyboardInterrupt:
-        pass
-    
+    try: plt.show()
+    except KeyboardInterrupt: pass
     running = False
     t.join(timeout=1.0)
     print("Demo Process Ended")
