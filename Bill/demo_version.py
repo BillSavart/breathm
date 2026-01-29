@@ -104,3 +104,7 @@ def main(stop_event=None, msg_callback=None):
     finally:
         p.stop()
         GPIO.cleanup()
+
+# [重點] 補上啟動指令
+if __name__ == "__main__":
+    main()

@@ -219,3 +219,7 @@ def main(stop_event=None, msg_callback=None):
     finally:
         p.stop()
         GPIO.cleanup()
+
+# [重點] 這裡就是剛剛缺少的啟動指令
+if __name__ == "__main__":
+    main()
