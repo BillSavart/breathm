@@ -13,8 +13,9 @@ try:
     from bmp280 import BMP280
     from smbus2 import SMBus
 except ImportError:
+    # 為了方便在非 Pi 環境測試而不報錯
     from smbus import SMBus
-    print("Warning: SMBus or BMP280 library mismatch. (如果是測試環境請忽略)")
+    print("Warning: SMBus or BMP280 library mismatch.")
 
 # --- 狀態定義 ---
 class MachineState(Enum):
@@ -95,38 +96,48 @@ def move_linear_actuator(direction):
 def guide_breathing_logic(timer, target, pos):
     direct = 0
     half = target / 2.0
+    current_action = "" # 用來記錄當下的動作字串
     
     if timer < half:
         # 吸氣階段：馬達伸出
         if pos <= linear_actuator_max_distance: direct = 1
         else: direct = 0
         timer += sampling_rate
+        current_action = "INHALE"
     elif timer >= half and timer < target:
         # 吐氣階段：馬達縮回
         if pos >= 0: direct = -1
         else: direct = 0
         timer += sampling_rate
+        current_action = "EXHALE"
     
     if timer >= target: timer = 0
 
     move_linear_actuator(direct)
     pos += direct
-    return timer, pos
+    
+    # 回傳當下的動作狀態
+    return timer, pos, current_action
 
 # --- Main Logic ---
-def main():
-    print(">>> 呼吸控制系統啟動 (無介面模式)...")
+# 修改：增加 stop_event (用於外部停止) 和 msg_callback (用於回傳訊號)
+def main(stop_event=None, msg_callback=None):
+    print(">>> 呼吸控制系統啟動...")
     
     # GPIO 初始化
-    GPIO.setmode(GPIO.BCM)
-    GPIO.setup(in1, GPIO.OUT)
-    GPIO.setup(in2, GPIO.OUT)
-    GPIO.setup(en, GPIO.OUT)
-    GPIO.output(in1, GPIO.LOW)
-    GPIO.output(in2, GPIO.LOW)
-    
-    p = GPIO.PWM(en, 800)
-    p.start(100)
+    try:
+        GPIO.setmode(GPIO.BCM)
+        GPIO.setup(in1, GPIO.OUT)
+        GPIO.setup(in2, GPIO.OUT)
+        GPIO.setup(en, GPIO.OUT)
+        GPIO.output(in1, GPIO.LOW)
+        GPIO.output(in2, GPIO.LOW)
+        
+        p = GPIO.PWM(en, 800)
+        p.start(100)
+    except Exception as e:
+        print(f"GPIO Init Error: {e}")
+        return
     
     # Sensor 初始化
     try:
@@ -137,6 +148,9 @@ def main():
         print(">>> 感測器連接成功")
     except Exception as e:
         print(f"!!! Sensor Error: {e}")
+        # 如果感測器壞了也要清理 GPIO
+        p.stop()
+        GPIO.cleanup()
         return
 
     # 變數初始化
@@ -147,27 +161,34 @@ def main():
     program_start_time = time.time()
     mirror_start_time = 0
     
-    mirror_breath_times = []    # Mirror 階段記錄用
-    detected_breath_times = []  # Guide 階段評估用
+    mirror_breath_times = []    
+    detected_breath_times = []  
     current_breath_duration = 0
     skip_first_breath = True
 
     la_position = 0
-    target_breath_time = 3.0 # 初始預設，稍後會被覆蓋
+    target_breath_time = 3.0 
     machine_breath_timer = 0
     
     prev_filtered = rt_filter.process(first_read)
-    running = True
+    
+    # 用來記錄上次發送給 Unity 的狀態，避免重複發送
+    last_sent_action = ""
 
     print(f">>> 系統暖機中 ({warmup_duration}秒)...")
 
     try:
-        while running:
+        # 迴圈條件：如果 stop_event 被設定了，就跳出迴圈
+        while not (stop_event and stop_event.is_set()):
             loop_start = time.time()
             
             # 讀取與濾波
-            raw = bmp280.get_pressure()
-            curr_filtered = rt_filter.process(raw)
+            try:
+                raw = bmp280.get_pressure()
+                curr_filtered = rt_filter.process(raw)
+            except OSError:
+                print("Sensor Read Error")
+                continue
             
             # 判斷使用者吸吐動作
             user_action = None
@@ -182,21 +203,18 @@ def main():
                 if user_action is not None:
                     user_state = user_action
                 
-                # 暖機結束判斷
                 if time.time() - program_start_time >= warmup_duration:
-                    print(">>> [系統] 暖機完成 -> 進入 MIRROR 模式 (偵測 60秒)")
+                    print(">>> [系統] 暖機完成 -> 進入 MIRROR 模式")
                     machine_state = MachineState.MIRROR
                     mirror_start_time = time.time()
                     current_breath_duration = 0
 
             elif machine_state == MachineState.MIRROR:
-                move_linear_actuator(0) # Mirror 階段馬達不動
+                move_linear_actuator(0) 
                 
-                # 計算呼吸長度
                 if user_state == UserState.EXHALE and user_action == UserState.INHALE:
-                    if current_breath_duration > 0.8: # 過濾極短雜訊
+                    if current_breath_duration > 0.8: 
                         mirror_breath_times.append(current_breath_duration)
-                        # print(f"    (偵測到呼吸: {current_breath_duration:.2f}s)") # 測試用，可註解掉
                     current_breath_duration = 0
                     user_state = UserState.INHALE
                 elif user_state == UserState.INHALE and user_action == UserState.EXHALE:
@@ -204,25 +222,30 @@ def main():
                 
                 current_breath_duration += sampling_rate
 
-                # Mirror 結束判斷
                 if time.time() - mirror_start_time >= mirror_duration:
                     if len(mirror_breath_times) > 0:
                         target_breath_time = np.mean(mirror_breath_times)
                         print(f">>> [結果] Mirror 結束. 平均頻率: {target_breath_time:.2f} 秒")
                     else:
                         target_breath_time = 4.0
-                        print(f">>> [結果] Mirror 未偵測到有效呼吸，使用預設值: 4.00 秒")
+                        print(f">>> [結果] 使用預設值: 4.00 秒")
                     
                     machine_state = MachineState.GUIDE
-                    print(f">>> [系統] 進入 GUIDE 模式 (初始目標: {target_breath_time:.2f}s)")
+                    print(f">>> [系統] 進入 GUIDE 模式")
                     current_breath_duration = 0
                     skip_first_breath = True
 
             elif machine_state == MachineState.GUIDE:
-                # 馬達開始引導
-                machine_breath_timer, la_position = guide_breathing_logic(
+                # 馬達開始引導，並取得當前動作 (INHALE/EXHALE)
+                machine_breath_timer, la_position, action = guide_breathing_logic(
                     machine_breath_timer, target_breath_time, la_position
                 )
+                
+                # --- [新增功能] 發送訊號給 Unity ---
+                if msg_callback and action != last_sent_action:
+                    msg_callback(f"ANIM:{action}\n")
+                    last_sent_action = action
+                # ----------------------------------
                 
                 # 記錄使用者表現
                 if user_state == UserState.EXHALE and user_action == UserState.INHALE:
@@ -238,15 +261,14 @@ def main():
                 
                 current_breath_duration += sampling_rate
 
-                # 評估調整邏輯
                 if len(detected_breath_times) >= sampling_window:
                     eval_st, new_target = validate_stable(detected_breath_times, target_breath_time)
                     if eval_st == EvalState.SUCCESS:
-                        print(f">>> [調整] 使用者穩定! 挑戰更慢: {target_breath_time:.2f}s -> {new_target:.2f}s")
+                        print(f">>> [調整] 穩定! 加速: {target_breath_time:.2f} -> {new_target:.2f}")
                         target_breath_time = new_target
                         detected_breath_times = []
                     elif eval_st == EvalState.FAIL:
-                        print(f">>> [調整] 節奏混亂. 放慢配合使用者: {target_breath_time:.2f}s -> {new_target:.2f}s")
+                        print(f">>> [調整] 混亂! 減速: {target_breath_time:.2f} -> {new_target:.2f}")
                         target_breath_time = new_target
                         detected_breath_times = []
                     else:
@@ -254,7 +276,6 @@ def main():
 
             prev_filtered = curr_filtered
 
-            # 維持採樣率 (60Hz)
             elapsed = time.time() - loop_start
             sleep_time = sampling_rate - elapsed
             if sleep_time > 0:
@@ -268,7 +289,7 @@ def main():
         print(">>> 清理 GPIO...")
         p.stop()
         GPIO.cleanup()
-        print(">>> 程式結束")
+        print(">>> 呼吸程式結束")
 
 if __name__ == "__main__":
     main()
