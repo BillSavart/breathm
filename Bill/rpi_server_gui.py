@@ -9,14 +9,14 @@ import os
 import signal
 
 # --- 匯入各個模式的模組 ---
-# 請確保 fix_version.py, demo_chart.py, demo_mirror_chart.py 都在同目錄
+# 請確保 fix_version.py, demo_version.py, demo_with_mirror.py 都在同目錄
 try:
     import fix_version
     import demo_version
     import demo_with_mirror
 except ImportError as e:
     print(f"Import Error: {e}")
-    print("請確認 fix_version.py, demo_chart.py, demo_mirror_chart.py 都在同一資料夾")
+    print("請確認 fix_version.py, demo_version.py, demo_with_mirror.py 都在同一資料夾")
 
 # 設定 IP 與 Port
 HOST = "0.0.0.0" 
