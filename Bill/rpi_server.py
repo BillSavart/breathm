@@ -5,7 +5,7 @@ import os
 import signal
 from self_check import run_self_check
 
-HOST = "172.20.10.4"
+HOST = "0.0.0.0"
 PORT = 5005
 
 breathm_process = None
